@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseTrack - Premium Dashboard</title>
+    
+    <!-- Premium Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Modern CSS Reset & Variablen */
+        :root {
+            --bg-gradient-start: #0a051b;
+            --bg-gradient-end: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-highlight: rgba(255, 255, 255, 0.03);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #8b5cf6; /* Glowing Violet */
+            --accent-secondary: #06b6d4; /* Vibrant Cyan */
+            --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+            overflow-x: hidden;
+            padding: 2.5rem 1.5rem;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+        }
+
+        /* Container & Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 1.5rem;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-badge {
+            background: var(--accent-gradient);
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .logo-title {
+            font-size: 1.75rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 0.4rem 0.8rem;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+
+        /* Glassmorphic KPI Cards Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-smooth);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, var(--glass-highlight), transparent);
+            pointer-events: none;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .kpi-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .kpi-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1;
+            background: linear-gradient(to right, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-footer {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .card-glowing-effect {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+            top: -75px;
+            right: -75px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Detail-Grid für Tabellen */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            margin-bottom: 1.25rem;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 18px;
+            background: var(--accent-gradient);
+            border-radius: 2px;
+        }
+
+        /* Premium Tabellen-Optik */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            font-weight: 600;
+        }
+
+        td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 0.9rem;
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr {
+            transition: var(--transition-smooth);
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+            color: #ffffff;
+        }
+
+        /* Visuelle Metriken-Balken */
+        .metric-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .metric-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 0.35rem;
+            font-size: 0.875rem;
+        }
+
+        .metric-bar-bg {
+            background: rgba(255, 255, 255, 0.05);
+            height: 6px;
+            border-radius: 9999px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 1.25rem;
+        }
+
+        .metric-bar-fill {
+            background: var(--accent-gradient);
+            height: 100%;
+            border-radius: 9999px;
+            width: 0; /* Wird per Inline-CSS über Jinja geladen */
+            transition: width 1s ease-out;
+        }
+
+        .count-badge {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--glass-border);
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Header -->
+        <header>
+            <div class="logo-area">
+                <div class="logo-badge">S</div>
+                <h1 class="logo-title">PulseTrack</h1>
+            </div>
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                System Live
+            </div>
+        </header>
+
+        <!-- KPI Grid -->
+        <section class="kpi-grid">
+            <div class="card">
+                <div class="card-glowing-effect"></div>
+                <h2 class="kpi-title">Seitenaufrufe (Pageviews)</h2>
+                <div class="kpi-value">{{ summary.total_pageviews }}</div>
+                <div class="kpi-footer">Gesamtzahl der geladenen Seiten</div>
+            </div>
+            <div class="card">
+                <div class="card-glowing-effect" style="background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);"></div>
+                <h2 class="kpi-title">Eindeutige Besucher (Uniques)</h2>
+                <div class="kpi-value">{{ summary.total_uniques }}</div>
+                <div class="kpi-footer">Einzigartige, DSGVO-anonymisierte Besucher</div>
+            </div>
+        </section>
+
+        <!-- Detail Grid (Analytics-Karten) -->
+        <section class="detail-grid">
+            
+            <!-- Beliebteste Seiten -->
+            <div class="card">
+                <h3 class="section-title">Beliebteste Seiten</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>URL</th>
+                            <th style="text-align: right;">Aufrufe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if summary.top_pages %}
+                            {% for page in summary.top_pages %}
+                            <tr>
+                                <td title="{{ page.url }}">{{ page.url }}</td>
+                                <td style="text-align: right;"><span class="count-badge">{{ page.count }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="2" style="color: var(--text-secondary); text-align: center; padding: 2rem;">Noch keine Daten erfasst.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Top Verweise (Referrer) -->
+            <div class="card">
+                <h3 class="section-title">Top Verweise (Referrer)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Referrer</th>
+                            <th style="text-align: right;">Aufrufe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if summary.top_referrers %}
+                            {% for ref in summary.top_referrers %}
+                            <tr>
+                                <td title="{{ ref.ref }}">{{ ref.ref }}</td>
+                                <td style="text-align: right;"><span class="count-badge">{{ ref.count }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="2" style="color: var(--text-secondary); text-align: center; padding: 2rem;">Noch keine Daten erfasst.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Browser-Verteilung -->
+            <div class="card">
+                <h3 class="section-title">Browser-Verteilung</h3>
+                {% if summary.browsers %}
+                    {% for b in summary.browsers %}
+                        {% set total = summary.total_pageviews %}
+                        {% set percent = (b.count / total * 100) | round if total > 0 else 0 %}
+                        <div>
+                            <div class="metric-info">
+                                <span>{{ b.browser }}</span>
+                                <span style="font-weight: 500;">{{ b.count }} Aufrufe ({{ percent }}%)</span>
+                            </div>
+                            <div class="metric-bar-bg">
+                                <div class="metric-bar-fill" style="width: {{ percent }}%;"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">Noch keine Daten erfasst.</p>
+                {% endif %}
+            </div>
+
+            <!-- Betriebssystem-Verteilung -->
+            <div class="card">
+                <h3 class="section-title">Betriebssystem-Verteilung</h3>
+                {% if summary.operating_systems %}
+                    {% for os in summary.operating_systems %}
+                        {% set total = summary.total_pageviews %}
+                        {% set percent = (os.count / total * 100) | round if total > 0 else 0 %}
+                        <div>
+                            <div class="metric-info">
+                                <span>{{ os.os }}</span>
+                                <span style="font-weight: 500;">{{ os.count }} Aufrufe ({{ percent }}%)</span>
+                            </div>
+                            <div class="metric-bar-bg">
+                                <div class="metric-bar-fill" style="width: {{ percent }}%;"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">Noch keine Daten erfasst.</p>
+                {% endif %}
+            </div>
+
+        </section>
+
+    </div>
+
+</body>
+</html>

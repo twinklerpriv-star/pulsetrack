@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseTrack – Live Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!--
+        INTEGRATION: Einbinden des Trackers.
+        In Produktion: "http://127.0.0.1:8000" durch Ihre Domain ersetzen.
+    -->
+    <script src="http://127.0.0.1:8000/tracker.js" defer></script>
+
+    <style>
+        :root {
+            --bg: #080d1a;
+            --surface: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.08);
+            --accent: #7c3aed;
+            --accent-glow: rgba(124,58,237,0.35);
+            --cyan: #06b6d4;
+            --text: #f1f5f9;
+            --muted: #64748b;
+            --green: #10b981;
+            --radius: 14px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            gap: 2rem;
+        }
+
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 760px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(124,58,237,0.12);
+            border: 1px solid rgba(124,58,237,0.3);
+            color: #a78bfa;
+            padding: 0.35rem 0.9rem;
+            border-radius: 99px;
+            font-size: 0.78rem;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 1.25rem;
+        }
+
+        .dot-live {
+            width: 7px; height: 7px;
+            background: #a78bfa;
+            border-radius: 50%;
+            animation: blink 1.6s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #fff 30%, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.15;
+            margin-bottom: 0.75rem;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 1rem;
+            line-height: 1.6;
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        /* Status-Box */
+        .status-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .status-icon {
+            width: 42px; height: 42px;
+            border-radius: 10px;
+            background: rgba(16,185,129,0.12);
+            border: 1px solid rgba(16,185,129,0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .status-title { font-weight: 600; font-size: 0.95rem; }
+        .status-sub { font-size: 0.82rem; color: var(--muted); margin-top: 0.15rem; }
+
+        .indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .pulse-dot {
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.25); }
+        }
+
+        /* Integration-Box */
+        .code-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .code-card h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+
+        .code-card h2::before {
+            content: '';
+            display: inline-block;
+            width: 3px; height: 16px;
+            background: linear-gradient(to bottom, var(--accent), var(--cyan));
+            border-radius: 2px;
+        }
+
+        .code-block {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.82rem;
+            color: #a5f3fc;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.6rem; right: 0.75rem;
+            background: rgba(124,58,237,0.2);
+            border: 1px solid rgba(124,58,237,0.3);
+            color: #c4b5fd;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(124,58,237,0.4);
+            color: #fff;
+        }
+
+        /* Test-Buttons */
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 500px) { .actions { grid-template-columns: 1fr; } }
+
+        .btn {
+            padding: 0.9rem 1.25rem;
+            border-radius: var(--radius);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #4f46e5);
+            color: #fff;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 28px var(--accent-glow);
+        }
+
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        /* Log-Fenster */
+        .log-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .log-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0.9rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem; font-weight: 600;
+        }
+
+        #log-output {
+            padding: 1rem 1.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            min-height: 130px;
+            max-height: 220px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .log-entry {
+            display: flex; gap: 0.75rem; align-items: flex-start;
+            opacity: 0;
+            transform: translateY(4px);
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .log-ts { color: var(--muted); flex-shrink: 0; }
+        .log-ok { color: var(--green); }
+        .log-err { color: #f87171; }
+        .log-info { color: #60a5fa; }
+
+        .log-placeholder { color: var(--muted); font-style: italic; font-size: 0.82rem; }
+
+        /* Link to dashboard */
+        .dashboard-link {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(6,182,212,0.08));
+            border: 1px solid rgba(124,58,237,0.2);
+            border-radius: var(--radius);
+            color: #c4b5fd;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.25s;
+        }
+
+        .dashboard-link:hover {
+            background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.15));
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .arrow { transition: transform 0.25s; }
+        .dashboard-link:hover .arrow { transform: translateX(4px); }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <div class="badge"><span class="dot-live"></span>Live Demo</div>
+            <h1>PulseTrack</h1>
+            <p class="subtitle">
+                Datenschutzkonformes Web-Analytics ohne Cookies. Trackt Seitenaufrufe, Referrer
+                und Browser – DSGVO-konform, blitzschnell, und mit unter 1&thinsp;KB JavaScript.
+            </p>
+        </div>
+
+        <!-- Server-Status -->
+        <div class="status-card">
+            <div class="status-left">
+                <div class="status-icon">📡</div>
+                <div>
+                    <div class="status-title">Analytics-Server</div>
+                    <div class="status-sub" id="server-url">http://127.0.0.1:8000</div>
+                </div>
+            </div>
+            <div class="indicator" id="server-status">
+                <div class="pulse-dot"></div>
+                <span>Wird geprüft …</span>
+            </div>
+        </div>
+
+        <!-- Integration Code -->
+        <div class="code-card">
+            <h2>Integration (eine Zeile)</h2>
+            <div style="position:relative;">
+                <div class="code-block" id="snippet-box">&lt;script src="http://127.0.0.1:8000/tracker.js" defer&gt;&lt;/script&gt;</div>
+                <button class="copy-btn" onclick="copySnippet()">Kopieren</button>
+            </div>
+        </div>
+
+        <!-- Aktions-Buttons -->
+        <div class="actions">
+            <button class="btn btn-primary" id="btn-hit" onclick="sendManualHit()">
+                ▶ Manuellen Pageview senden
+            </button>
+            <button class="btn btn-secondary" onclick="checkServer()">
+                🔄 Server-Status prüfen
+            </button>
+        </div>
+
+        <!-- Live-Log -->
+        <div class="log-card">
+            <div class="log-header">
+                <span>📋 Live-Ereignisprotokoll</span>
+                <button class="copy-btn" style="position:static;" onclick="clearLog()">Leeren</button>
+            </div>
+            <div id="log-output">
+                <div class="log-placeholder">
+                    → Klicken Sie auf "Manuellen Pageview senden" um das Tracking zu testen.
+                </div>
+            </div>
+        </div>
+
+        <!-- Link zum Dashboard -->
+        <a href="http://127.0.0.1:8000/" target="_blank" class="dashboard-link">
+            Analytics-Dashboard öffnen <span class="arrow">→</span>
+        </a>
+
+    </div>
+
+    <script>
+        const API = 'http://127.0.0.1:8000';
+
+        function ts() {
+            return new Date().toLocaleTimeString('de-AT', { hour12: false });
+        }
+
+        function log(msg, type = 'info') {
+            const el = document.getElementById('log-output');
+            // Platzhalter entfernen beim ersten Eintrag
+            const placeholder = el.querySelector('.log-placeholder');
+            if (placeholder) placeholder.remove();
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-ts">${ts()}</span><span class="log-${type}">${msg}</span>`;
+            el.appendChild(entry);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function checkServer() {
+            const statusEl = document.getElementById('server-status');
+            statusEl.innerHTML = '<span style="color:var(--muted)">Verbinde …</span>';
+            try {
+                const r = await fetch(`${API}/tracker.js`, { method: 'GET' });
+                if (r.ok) {
+                    statusEl.innerHTML = '<div class="pulse-dot"></div><span style="color:var(--green)">Online ✓</span>';
+                    log('Server erreichbar – tracker.js erfolgreich geladen.', 'ok');
+                } else {
+                    statusEl.innerHTML = '<span style="color:#f87171">Fehler (' + r.status + ')</span>';
+                    log('Server-Fehler: HTTP ' + r.status, 'err');
+                }
+            } catch (e) {
+                statusEl.innerHTML = '<span style="color:#f87171">Offline ✗</span>';
+                log('Server nicht erreichbar. Läuft uvicorn? → uv run uvicorn app.main:app --reload', 'err');
+            }
+        }
+
+        async function sendManualHit() {
+            const btn = document.getElementById('btn-hit');
+            btn.disabled = true;
+            btn.textContent = '⏳ Wird gesendet …';
+
+            const payload = {
+                url: window.location.href,
+                referrer: document.referrer || null
+            };
+
+            log(`Sende Hit → url: ${payload.url}`, 'info');
+
+            try {
+                const r = await fetch(`${API}/api/hit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (r.ok) {
+                    const data = await r.json();
+                    log(`Hit erfolgreich aufgezeichnet (Status: ${data.status})`, 'ok');
+                } else {
+                    log(`API-Fehler: HTTP ${r.status}`, 'err');
+                }
+            } catch (e) {
+                log(`Netzwerkfehler: ${e.message}`, 'err');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '▶ Manuellen Pageview senden';
+            }
+        }
+
+        function copySnippet() {
+            const text = document.getElementById('snippet-box').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                log('Integration-Snippet in die Zwischenablage kopiert.', 'ok');
+            });
+        }
+
+        function clearLog() {
+            const el = document.getElementById('log-output');
+            el.innerHTML = '<div class="log-placeholder">→ Protokoll geleert.</div>';
+        }
+
+        // Automatische Server-Prüfung beim Laden
+        window.addEventListener('load', () => {
+            log('Demo-Seite geladen. Starte automatische Server-Prüfung …', 'info');
+            checkServer();
+        });
+    </script>
+</body>
+</html>

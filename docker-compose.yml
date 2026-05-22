@@ -1,0 +1,36 @@
+# Docker Compose: PulseTrack
+# Datum: 20.05.2026 | Version: 1.0 | Status: Produktionsbereit
+#
+# Verwendung:
+#   docker compose up -d            → Container starten
+#   docker compose down             → Container stoppen
+#   docker compose logs -f          → Logs verfolgen
+
+services:
+  analytics:
+    build: .
+    container_name: pulsetrack
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      # Persistente Datenbank: bleibt auch nach Container-Neustart erhalten
+      - analytics_data:/data
+
+    environment:
+      # WICHTIG: In Produktion durch ein sicheres, zufälliges Secret ersetzen!
+      - ANALYTICS_SALT_SECRET=${ANALYTICS_SALT_SECRET:-change-me-in-production}
+      - ANALYTICS_DB_PATH=/data/analytics.db
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/tracker.js')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  analytics_data:
+    driver: local
