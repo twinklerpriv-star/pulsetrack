@@ -77,3 +77,12 @@ uv run pytest
 ```bash
 uv run ruff check .
 ```
+
+---
+
+## Lizenz
+
+Dieses Projekt ist unter der **GNU Affero General Public License v3.0 (AGPL-3.0)** lizenziert. Details finden Sie in der [LICENSE](file:///c:/Users/monik/Desktop/Thomas/Programmierung/Earning%20Money/01/LICENSE)-Datei.
+
+Die AGPL v3 stellt sicher, dass alle Verbesserungen an der Codebasis der Community zugänglich gemacht werden müssen, wenn PulseTrack als Cloud-Dienst (SaaS) angeboten wird. Dies schützt das Projekt vor unlauterem Trittbrettfahren und fördert eine kollaborative Weiterentwicklung.
+
