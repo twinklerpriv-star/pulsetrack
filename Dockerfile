@@ -12,7 +12,7 @@ WORKDIR /build
 
 # Abhängigkeiten zuerst kopieren (Layer-Caching: bei Code-Änderungen bleibt dieser Layer erhalten)
 COPY pyproject.toml .
-RUN uv pip install --system fastapi uvicorn jinja2 pydantic
+RUN uv pip install --system fastapi uvicorn jinja2 pydantic pydantic-settings python-multipart sqlalchemy argon2-cffi stripe
 
 # --- Stage 2: Runtime ---
 # Minimales Image, kein Build-Overhead im finalen Container
@@ -45,7 +45,7 @@ EXPOSE 8000
 
 # Health-Check: prüft alle 30s ob der Server antwortet
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/tracker.js')"
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"
 
 # Startbefehl: Produktions-Server mit 2 Workern
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

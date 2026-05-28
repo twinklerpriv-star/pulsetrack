@@ -421,3 +421,39 @@ def test_avv_sign_flow(db_session):
     assert signature is not None
     assert signature.avv_version == "1.0"
     assert signature.signed_from_ip in ("127.0.0.0", "IPv6")  # Anonymisiertes Format
+
+
+def test_database_pruning(db_session):
+    """Testet die automatische, tarifbasierte Löschung veralteter Analytics-Daten."""
+    from datetime import datetime, timedelta, timezone
+
+    from app.database import prune_database
+    
+    # 1. Trial-User und Website anlegen
+    user_trial = User(email="trial_pruning@pepi.at", password_hash="hash", created_at="2026-05-28", subscription_status="trial")
+    db_session.add(user_trial)
+    db_session.commit()
+    
+    web_trial = Website(user_id=user_trial.id, domain="https://trial.at", tracking_token="pt_trial_pruning", created_at="2026-05-28")
+    db_session.add(web_trial)
+    db_session.commit()
+
+    # 2. Hits anlegen für Trial-User: 1 Hit von heute (behalten), 1 Hit von vor 15 Tagen (löschen)
+    now = datetime.now(tz=timezone.utc).replace(tzinfo=None)
+    ts_now = now.isoformat()
+    ts_old = (now - timedelta(days=15)).isoformat()
+    
+    hit_recent = Hit(website_id=web_trial.id, timestamp=ts_now, url="/home", user_agent="Mozilla", ip_hash="hash1", browser="Chrome", os="Windows")
+    hit_old = Hit(website_id=web_trial.id, timestamp=ts_old, url="/old", user_agent="Mozilla", ip_hash="hash2", browser="Chrome", os="Windows")
+    db_session.add(hit_recent)
+    db_session.add(hit_old)
+    db_session.commit()
+
+    # 3. DB-Pruning-Mock patch SessionLocal to use our test db session
+    with patch("app.database.SessionLocal", return_value=NonClosingSessionProxy(db_session)):
+        prune_database()
+
+    # 4. Verifizieren: Alter Hit gelöscht, neuer Hit behalten!
+    hits = db_session.query(Hit).filter(Hit.website_id == web_trial.id).all()
+    assert len(hits) == 1
+    assert hits[0].url == "/home"

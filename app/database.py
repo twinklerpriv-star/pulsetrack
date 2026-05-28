@@ -47,3 +47,68 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def prune_database() -> None:
+    """
+    Führt die automatische Aufbewahrungsbereinigung (Retention) gemäß der Tarife durch.
+    Schont Speicherplatz und gewährt die DSGVO-Datenminimierung.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from app.models.hit import Hit
+    from app.models.user import User
+    from app.models.website import Website
+    
+    db = SessionLocal()
+    try:
+        logger.info("Datenbank-Pruning-Prozess wird gestartet...")
+        now = datetime.now(tz=timezone.utc).replace(tzinfo=None)
+        
+        # 1. Trial- und Starter-Accounts bereinigen (14 Tage Aufbewahrung)
+        fourteen_days_ago = (now - timedelta(days=14)).isoformat()
+        
+        # Finde alle User mit 'trial' oder 'canceled' (oder Starter, falls wir ihn bereinigen wollen)
+        starter_users = db.query(User.id).filter(
+            (User.subscription_status == "trial") | 
+            (User.subscription_status == "canceled")
+        ).all()
+        starter_user_ids = [u[0] for u in starter_users]
+        
+        if starter_user_ids:
+            # Finde alle Webseiten dieser User
+            starter_websites = db.query(Website.id).filter(Website.user_id.in_(starter_user_ids)).all()
+            starter_website_ids = [w[0] for w in starter_websites]
+            
+            if starter_website_ids:
+                # Lösche Hits dieser Webseiten, die älter als 14 Tage sind
+                deleted_starter_hits = db.query(Hit).filter(
+                    Hit.website_id.in_(starter_website_ids),
+                    Hit.timestamp < fourteen_days_ago
+                ).delete(synchronize_session=False)
+                logger.info(f"{deleted_starter_hits} veraltete Hits von Trial/Canceled-Accounts gelöscht.")
+
+        # 2. Business-Accounts bereinigen (365 Tage Aufbewahrung)
+        one_year_ago = (now - timedelta(days=365)).isoformat()
+        
+        business_users = db.query(User.id).filter(User.subscription_status == "active").all()
+        business_user_ids = [u[0] for u in business_users]
+        
+        if business_user_ids:
+            business_websites = db.query(Website.id).filter(Website.user_id.in_(business_user_ids)).all()
+            business_website_ids = [w[0] for w in business_websites]
+            
+            if business_website_ids:
+                deleted_business_hits = db.query(Hit).filter(
+                    Hit.website_id.in_(business_website_ids),
+                    Hit.timestamp < one_year_ago
+                ).delete(synchronize_session=False)
+                logger.info(f"{deleted_business_hits} veraltete Hits von Business-Accounts gelöscht (älter als 1 Jahr).")
+                
+        db.commit()
+        logger.info("Datenbank-Pruning-Prozess erfolgreich abgeschlossen.")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Fehler beim Datenbank-Pruning: {e}")
+    finally:
+        db.close()
