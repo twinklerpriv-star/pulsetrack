@@ -1,15 +1,38 @@
 # Installations- und Tracking-Konfiguration
 #
-# Datum: 27.05.2026 | Version: 1.0
+# Datum: 28.05.2026 | Version: 2.0
 
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
+from pydantic import ConfigDict
+from pydantic_settings import BaseSettings
+
 DEFAULT_FALLBACK_SECRET = "pulsetrack-fallback-secret"
+
+
+class Settings(BaseSettings):
+    ANALYTICS_SALT_SECRET: str = DEFAULT_FALLBACK_SECRET
+    ANALYTICS_DB_PATH: str = "analytics.db"
+    
+    # Stripe Configuration
+    STRIPE_SECRET_KEY: str = "sk_test_mock"
+    STRIPE_PUBLISHABLE_KEY: str = "pk_test_mock"
+    STRIPE_WEBHOOK_SECRET: str = "whsec_mock"
+    STRIPE_PRICE_STARTER: str = "price_starter"
+    STRIPE_PRICE_BUSINESS: str = "price_business"
+    STRIPE_PRICE_ENTERPRISE: str = "price_enterprise"
+
+    model_config = ConfigDict(
+        env_file=".env",
+        extra="ignore"
+    )
+
+
+settings = Settings()
 
 
 @dataclass
@@ -27,7 +50,8 @@ class InstallConfig:
 
 
 def get_database_path() -> str:
-    return os.environ.get("ANALYTICS_DB_PATH", "analytics.db")
+    return settings.ANALYTICS_DB_PATH
+
 
 
 def normalize_site_url(raw: str) -> str:

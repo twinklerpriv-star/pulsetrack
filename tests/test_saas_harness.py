@@ -229,3 +229,141 @@ def test_caddy_cname_verification(db_session):
     # 3. Caddy Endpoint anfragen für nicht registrierte Domain -> Muss 403 liefern
     response_fail = client.get("/api/verify-cname-domain?domain=unbekanntes-shop.at")
     assert response_fail.status_code == 403
+
+
+def test_stripe_checkout_creation(db_session):
+    """Testet die Erstellung einer Stripe-Checkout-Session und den Redirect."""
+    # 1. Test-User erstellen
+    user = User(email="checkout_test@pepi.at", password_hash="hash", created_at="2026-05-28", subscription_status="trial")
+    db_session.add(user)
+    db_session.commit()
+
+    # 2. Session simulieren
+    session_id = secrets.token_hex(32)
+    sessions[session_id] = {"user_id": user.id, "email": user.email}
+
+    # 3. Stripe Checkout Session mocken
+    class MockCheckoutSession:
+        id = "cs_test_abc123"
+        url = "https://checkout.stripe.com/pay/cs_test_abc123"
+
+    with patch("stripe.checkout.Session.create", return_value=MockCheckoutSession()) as mock_create:
+        response = client.post(
+            "/api/billing/checkout",
+            data={"plan_type": "business"},
+            headers={"Cookie": f"{SESSION_COOKIE_NAME}={session_id}"},
+            follow_redirects=False
+        )
+        # Überprüfen, ob es ein Redirect zum Stripe-Checkout ist
+        assert response.status_code == 303
+        assert response.headers["location"] == "https://checkout.stripe.com/pay/cs_test_abc123"
+        
+        # Sicherstellen, dass Stripe mit den korrekten Parametern aufgerufen wurde
+        mock_create.assert_called_once()
+        kwargs = mock_create.call_args[1]
+        assert kwargs["metadata"]["user_id"] == str(user.id)
+        assert kwargs["tax_id_collection"]["enabled"] is True
+        assert kwargs["automatic_tax"]["enabled"] is True
+
+
+def test_synchronous_checkout_verification(db_session):
+    """Testet die synchrone Freischaltung bei Rückkehr vom Stripe Checkout."""
+    # 1. Test-User im Trial-Modus anlegen
+    user = User(email="verify_test@pepi.at", password_hash="hash", created_at="2026-05-28", subscription_status="trial")
+    db_session.add(user)
+    db_session.commit()
+
+    # 2. Mocking des Stripe-Session-Retrievals
+    mock_session_details = {
+        "id": "cs_test_abc123",
+        "status": "complete",
+        "payment_status": "paid",
+        "customer": "cus_test_999",
+        "subscription": "sub_test_888",
+        "user_id": user.id
+    }
+
+    with patch("app.services.stripe_service.verify_checkout_session", return_value=mock_session_details):
+        response = client.get("/api/verify-checkout?session_id=cs_test_abc123", follow_redirects=False)
+        assert response.status_code == 303
+        assert response.headers["location"] == "/?payment=success"
+
+        # Prüfen, ob der Premium-Status in der Datenbank aktiv ist
+        db_session.refresh(user)
+        assert user.subscription_status == "active"
+        assert user.stripe_customer_id == "cus_test_999"
+        assert user.stripe_subscription_id == "sub_test_888"
+
+
+def test_stripe_webhook_invoice_paid(db_session):
+    """Simuliert einen erfolgreichen Stripe-Zahlungs-Webhook und prüft Freischaltung."""
+    # 1. Test-User anlegen
+    user = User(email="webhook_paid@pepi.at", password_hash="hash", created_at="2026-05-28", subscription_status="trial")
+    db_session.add(user)
+    db_session.commit()
+
+    # 2. Webhook Event mocken
+    mock_event = {
+        "type": "invoice.paid",
+        "data": {
+            "object": {
+                "customer": "cus_webhook_123",
+                "subscription": "sub_webhook_456",
+                "metadata": {"user_id": str(user.id)}
+            }
+        }
+    }
+
+    with patch("stripe.Webhook.construct_event", return_value=mock_event):
+        response = client.post(
+            "/api/webhooks/stripe",
+            content=b"raw_payload",
+            headers={"stripe-signature": "t=123,v1=abc"}
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "success"
+
+        # Prüfen, ob der Premium-Status in der Datenbank aktiv ist
+        db_session.refresh(user)
+        assert user.subscription_status == "active"
+        assert user.stripe_customer_id == "cus_webhook_123"
+        assert user.stripe_subscription_id == "sub_webhook_456"
+
+
+def test_stripe_webhook_subscription_deleted(db_session):
+    """Simuliert eine Kündigung über den Webhook und prüft Deaktivierung."""
+    # 1. Aktiven Premium-User anlegen
+    user = User(
+        email="webhook_cancel@pepi.at", 
+        password_hash="hash", 
+        created_at="2026-05-28", 
+        subscription_status="active",
+        stripe_customer_id="cus_webhook_123",
+        stripe_subscription_id="sub_webhook_456"
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    # 2. Webhook Event mocken
+    mock_event = {
+        "type": "customer.subscription.deleted",
+        "data": {
+            "object": {
+                "id": "sub_webhook_456",
+                "customer": "cus_webhook_123"
+            }
+        }
+    }
+
+    with patch("stripe.Webhook.construct_event", return_value=mock_event):
+        response = client.post(
+            "/api/webhooks/stripe",
+            content=b"raw_payload",
+            headers={"stripe-signature": "t=123,v1=abc"}
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "success"
+
+        # Prüfen, ob der Premium-Status deaktiviert wurde
+        db_session.refresh(user)
+        assert user.subscription_status == "canceled"

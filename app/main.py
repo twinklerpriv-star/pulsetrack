@@ -15,8 +15,9 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app.database import Base, engine, get_db
+from app.models.user import User
 from app.models.website import Website
-from app.routers import auth_router, caddy_router, dashboard_router, ingest_router
+from app.routers import auth_router, billing_router, caddy_router, dashboard_router, ingest_router
 from app.routers.auth import SESSION_COOKIE_NAME, sessions
 from app.services.queue_worker import batch_writer_worker, write_queue_to_db
 from app.services.security import get_or_create_daily_hmac_key
@@ -91,6 +92,7 @@ app.add_middleware(
 
 # 4. Modulare API-Routers inkludieren
 app.include_router(auth_router)
+app.include_router(billing_router)
 app.include_router(ingest_router)
 app.include_router(caddy_router)
 app.include_router(dashboard_router)
@@ -115,6 +117,8 @@ async def home_or_dashboard(request: Request, db: Session = Depends(get_db)):
     user_session = sessions[session_id]
     user_id = user_session["user_id"]
     
+    user = db.query(User).filter(User.id == user_id).first()
+    
     # Hole registrierte Webseiten des Kunden
     websites = db.query(Website).filter(Website.user_id == user_id).all()
     
@@ -123,7 +127,8 @@ async def home_or_dashboard(request: Request, db: Session = Depends(get_db)):
         context={
             "request": request,
             "email": user_session["email"],
-            "websites": websites
+            "websites": websites,
+            "user": user
         }
     )
 

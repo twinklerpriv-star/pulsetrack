@@ -340,6 +340,203 @@
             padding: 0.85rem 1rem;
             font-size: 0.88rem;
         }
+
+        /* Premium Billing Styles */
+        .billing-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.5rem;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .billing-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .badge-premium {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-trial {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-canceled {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-billing {
+            background: var(--accent-gradient);
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: var(--transition-smooth);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-billing:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-secondary-billing {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            padding: 0.5rem 1.25rem;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: var(--transition-smooth);
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-secondary-billing:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Tarif Upgrade Sektion */
+        .upgrade-section {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-top: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px);
+        }
+
+        .upgrade-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .pricing-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            transition: var(--transition-smooth);
+            position: relative;
+        }
+
+        .pricing-card.popular {
+            border-color: var(--accent-primary);
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .pricing-card.popular::after {
+            content: "Beliebt";
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--accent-gradient);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .pricing-header h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .pricing-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            min-height: 2.5rem;
+        }
+
+        .pricing-price {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .pricing-price span {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .pricing-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 1rem 0;
+        }
+
+        .pricing-features li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pricing-features li::before {
+            content: "✓";
+            color: #10b981;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
@@ -379,6 +576,42 @@
             <a href="/setup">Konfiguration ändern</a>
         </div>
         {% endif %}
+
+        {% if request.query_params.get('payment') == 'success' %}
+        <div class="setup-done" style="background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #a7f3d0;">
+            🚀 Zahlungsabwicklung erfolgreich! Ihr Premium-Status wurde sofort aktiviert.
+        </div>
+        {% elif request.query_params.get('payment') == 'cancel' %}
+        <div class="setup-bar" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #fef3c7;">
+            ℹ️ Stripe Checkout abgebrochen. Sie befinden sich weiterhin in der Testphase.
+        </div>
+        {% elif request.query_params.get('payment') == 'failed' or request.query_params.get('payment') == 'error' %}
+        <div class="setup-bar" style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #fee2e2;">
+            ⚠️ Fehler bei der Zahlungsverarbeitung. Bitte versuchen Sie es erneut oder wenden Sie sich an den Support.
+        </div>
+        {% endif %}
+
+        <!-- Stripe Billing Bar -->
+        <div class="billing-bar">
+            <div class="billing-status">
+                <strong style="color: var(--text-primary);">Abonnement-Status:</strong>
+                {% if user.subscription_status == 'active' %}
+                    <span class="badge-premium">Premium Aktiv</span>
+                {% elif user.subscription_status == 'trial' %}
+                    <span class="badge-trial">Testphase (Aktiv)</span>
+                {% else %}
+                    <span class="badge-canceled">Inaktiv / Gekündigt</span>
+                {% endif %}
+            </div>
+            
+            <div>
+                {% if user.subscription_status == 'active' %}
+                    <a href="/api/billing/portal" class="btn-secondary-billing">Abo verwalten</a>
+                {% else %}
+                    <a href="#tarife" class="btn-billing">Jetzt Premium freischalten</a>
+                {% endif %}
+            </div>
+        </div>
 
         <!-- KPI Grid -->
         <section class="kpi-grid">
@@ -498,6 +731,78 @@
             </div>
 
         </section>
+
+        <!-- Stripe Pricing Card Grid -->
+        {% if user.subscription_status != 'active' %}
+        <section id="tarife" class="upgrade-section">
+            <h3 class="section-title" style="margin-bottom: 0.5rem;">Tarif wählen & Premium-Funktionen freischalten</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                Holen Sie das Maximum aus Ihren Web-Analytics heraus. Unbegrenzte Webseiten, Echtzeit-Tracking und lebenslanger Support.
+            </p>
+            
+            <div class="upgrade-grid">
+                <!-- Starter Plan -->
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Starter</h3>
+                        <p class="pricing-desc">Perfekt für Blogger und kleine Webprojekte.</p>
+                    </div>
+                    <div class="pricing-price">9 € <span>/ Monat</span></div>
+                    <ul class="pricing-features">
+                        <li>Bis zu 3 Webseiten</li>
+                        <li>50.000 Pageviews / Monat</li>
+                        <li>DSGVO-konformes Ingestion-System</li>
+                        <li>14 Tage Datenaufbewahrung</li>
+                    </ul>
+                    <form action="/api/billing/checkout" method="POST">
+                        <input type="hidden" name="plan_type" value="starter">
+                        <button type="submit" class="btn-billing" style="width: 100%;">Starter wählen</button>
+                    </form>
+                </div>
+
+                <!-- Business Plan -->
+                <div class="pricing-card popular">
+                    <div class="pricing-header">
+                        <h3>Business</h3>
+                        <p class="pricing-desc">Ideal für wachsende Unternehmen & E-Commerce.</p>
+                    </div>
+                    <div class="pricing-price">29 € <span>/ Monat</span></div>
+                    <ul class="pricing-features">
+                        <li>Bis zu 10 Webseiten</li>
+                        <li>500.000 Pageviews / Monat</li>
+                        <li>Echtzeit-Verifizierung & Prio-Schreibqueue</li>
+                        <li>12 Monate Datenaufbewahrung</li>
+                        <li>Reverse-Charge B2B-Rechnungskonformität</li>
+                    </ul>
+                    <form action="/api/billing/checkout" method="POST">
+                        <input type="hidden" name="plan_type" value="business">
+                        <button type="submit" class="btn-billing" style="width: 100%;">Business wählen</button>
+                    </form>
+                </div>
+
+                <!-- Enterprise Plan -->
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Enterprise</h3>
+                        <p class="pricing-desc">Für Agenturen, SaaS-Betreiber & High-Traffic Portale.</p>
+                    </div>
+                    <div class="pricing-price">79 € <span>/ Monat</span></div>
+                    <ul class="pricing-features">
+                        <li>Unbegrenzte Webseiten</li>
+                        <li>Unbegrenzte Pageviews</li>
+                        <li>Eigene SSL Domain-Verifizierung</li>
+                        <li>Unbegrenzte Datenaufbewahrung</li>
+                        <li>White-Label Reselling Option</li>
+                        <li>Dedizierter Support</li>
+                    </ul>
+                    <form action="/api/billing/checkout" method="POST">
+                        <input type="hidden" name="plan_type" value="enterprise">
+                        <button type="submit" class="btn-billing" style="width: 100%;">Enterprise wählen</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+        {% endif %}
 
     </div>
 
