@@ -19,7 +19,7 @@ from app.models.user import User
 from app.models.website import Website
 from app.routers import auth_router, billing_router, caddy_router, dashboard_router, ingest_router
 from app.routers.auth import SESSION_COOKIE_NAME, sessions
-from app.services.queue_worker import batch_writer_worker, write_queue_to_db
+from app.services.queue_worker import batch_writer_worker, hit_queue, write_queue_to_db
 from app.services.security import get_or_create_daily_hmac_key
 
 logger = logging.getLogger("analytics_main")
@@ -96,6 +96,24 @@ app.include_router(billing_router)
 app.include_router(ingest_router)
 app.include_router(caddy_router)
 app.include_router(dashboard_router)
+
+
+@app.get("/api/health")
+async def health_check():
+    """
+    System-Health Check zur Echtzeit-Überwachung.
+    Liefert den aktuellen Füllstand der RAM-Ingestion-Queue.
+    """
+    queue_size = hit_queue.qsize()
+    status = "healthy"
+    if queue_size >= 9000:
+        status = "warning"
+    
+    return {
+        "status": status,
+        "queue_size": queue_size,
+        "max_queue_size": 10000
+    }
 
 # 5. UI Views (GET Endpunkte für Landingpage & Dashboard)
 @app.get("/", response_class=HTMLResponse)

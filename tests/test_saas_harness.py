@@ -367,3 +367,13 @@ def test_stripe_webhook_subscription_deleted(db_session):
         # Prüfen, ob der Premium-Status deaktiviert wurde
         db_session.refresh(user)
         assert user.subscription_status == "canceled"
+
+
+def test_health_endpoint():
+    """Testet den System-Health Check auf korrekte JSON-Rückgabe."""
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "healthy"
+    assert "queue_size" in data
+    assert data["max_queue_size"] == 10000
