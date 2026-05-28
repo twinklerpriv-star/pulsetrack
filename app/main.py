@@ -1,195 +1,137 @@
-# FastAPI Hauptanwendung
+# FastAPI Hauptanwendung (Modular & Enterprise-Ready)
 #
-# Datum: 27.05.2026 | Version: 1.2
+# Datum: 28.05.2026 | Version: 3.0 | Status: Aktiv gepflegt
 
-
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Form, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
-from app import database
-from app.config import build_integration_snippet
+from app.database import Base, engine, get_db
+from app.models.website import Website
+from app.routers import auth_router, caddy_router, dashboard_router, ingest_router
+from app.routers.auth import SESSION_COOKIE_NAME, sessions
+from app.services.queue_worker import batch_writer_worker, write_queue_to_db
+from app.services.security import get_or_create_daily_hmac_key
 
 logger = logging.getLogger("analytics_main")
 logging.basicConfig(level=logging.INFO)
 
-
-def _cors_origins_for_config() -> list[str]:
-    try:
-        config = database.get_install_config()
-    except Exception:
-        return []
-    if config.permissive:
-        return ["*"]
-    if config.allowed_origins:
-        return config.allowed_origins
-    return []
-
-
+# 1. Asynchroner Lifespan-Handler zur Steuerung von Queue, DB & Key-Rotation
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("PulseTrack SaaS Engine wird gestartet...")
     try:
-        database.init_db()
-        logger.info("Datenbank erfolgreich beim Start vorbereitet.")
+        # DB-Tabellen automatisch erstellen, falls nicht vorhanden
+        Base.metadata.create_all(bind=engine)
+        logger.info("Datenbank-Schemata erfolgreich abgeglichen.")
+        
+        # Initiiere den HMAC-Key für heute
+        db = next(get_db())
+        get_or_create_daily_hmac_key(db)
+        db.close()
+        
+        # Startet den asynchronen Queue-Schreib-Hintergrundprozess
+        app.state.queue_task = asyncio.create_task(batch_writer_worker())
+        
+        logger.info("Start-Sequenz erfolgreich abgeschlossen.")
     except Exception as e:
         logger.critical(f"Kritischer Fehler beim Anwendungsstart: {e}")
+        
     yield
-
-
-app = FastAPI(
-    title="PulseTrack",
-    description="Minimalistisches, datenschutzkonformes Web-Analytics-System.",
-    version="0.2.0",
-    lifespan=lifespan,
-)
-
-class DynamicCORSMiddleware(CORSMiddleware):
-    """Lädt erlaubte Origins bei jedem Request neu (Setup ohne Neustart)."""
-
-    async def __call__(self, scope, receive, send):
-        if scope["type"] == "http":
-            origins = _cors_origins_for_config()
-            self.allow_origins = origins
-            self.allow_all_origins = "*" in origins
-        await super().__call__(scope, receive, send)
-
-
-app.add_middleware(
-    DynamicCORSMiddleware,
-    allow_origins=[],
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
-)
-
-templates_dir = os.path.join(os.path.dirname(__file__), "templates")
-templates = Jinja2Templates(directory=templates_dir)
-
-
-class HitPayload(BaseModel):
-    url: str
-    referrer: str | None = None
-
-
-def _request_base_url(request: Request) -> str:
-    return str(request.base_url).rstrip("/")
-
-
-def _setup_context(request: Request, **extra):
-    config = database.get_install_config()
-    return {
-        "request": request,
-        "primary_site": config.primary_site or "",
-        "track_apex": config.track_apex,
-        "track_subdomains": config.track_subdomains,
-        "show_skip": os.environ.get("PULSETRACK_ALLOW_PERMISSIVE_SETUP", "").lower() in ("1", "true", "yes"),
-        **extra,
-    }
-
-
-@app.post("/api/hit", status_code=202)
-async def capture_hit(payload: HitPayload, request: Request):
-    if not database.is_url_allowed_for_tracking(payload.url):
-        raise HTTPException(status_code=403, detail="URL is not allowed by the current tracking configuration.")
-
-    user_agent = request.headers.get("user-agent")
-
-    forwarded_for = request.headers.get("x-forwarded-for")
-    if forwarded_for:
-        client_ip = forwarded_for.split(",")[0].strip()
-    else:
-        client_ip = request.client.host if request.client else "127.0.0.1"
-
+    
+    # Graceful Shutdown Sequence (SIGTERM Fänger)
+    logger.warning("PulseTrack SaaS Engine wird gestoppt...")
     try:
-        database.save_hit(
-            url=payload.url,
-            referrer=payload.referrer,
-            user_agent=user_agent,
-            client_ip=client_ip,
-        )
-        return {"status": "accepted"}
+        # Queue-Task abbrechen und restliche Daten flushen
+        app.state.queue_task.cancel()
+        await write_queue_to_db()
+        logger.info("Stop-Sequenz erfolgreich abgeschlossen.")
     except Exception as e:
-        logger.error(f"Fehler bei der Hit-Erfassung: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error during event logging.") from e
+        logger.error(f"Fehler bei Graceful Shutdown: {e}")
 
+# 2. FastAPI Instanz erstellen
+app = FastAPI(
+    title="PulseTrack SaaS",
+    description="SaaS Web-Analytics - Blitzschnell, cookie-frei und 100% DSGVO-konform.",
+    version="3.0.0",
+    lifespan=lifespan
+)
 
+# Static-Dateien Mounten (styles.css, tracker.js etc.)
+app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")), name="static")
+
+# Statisches tracker.js bereitstellen
 @app.get("/tracker.js")
 async def get_tracker():
-    tracker_path = os.path.join(os.path.dirname(__file__), "tracker.js")
+    tracker_path = os.path.join(os.path.dirname(__file__), "static", "tracker.js")
     if os.path.exists(tracker_path):
         return FileResponse(tracker_path, media_type="application/javascript")
     raise HTTPException(status_code=404, detail="Tracker script not found.")
 
+# Templates-Verzeichnis konfigurieren
+templates_dir = os.path.join(os.path.dirname(__file__), "templates")
+templates = Jinja2Templates(directory=templates_dir)
 
-@app.get("/setup", response_class=HTMLResponse)
-async def setup_form(request: Request):
+# 3. CORS & Dynamic-Origin-Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Dynamic validation is done at router-level in Ingestion-API
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
+# 4. Modulare API-Routers inkludieren
+app.include_router(auth_router)
+app.include_router(ingest_router)
+app.include_router(caddy_router)
+app.include_router(dashboard_router)
+
+# 5. UI Views (GET Endpunkte für Landingpage & Dashboard)
+@app.get("/", response_class=HTMLResponse)
+async def home_or_dashboard(request: Request, db: Session = Depends(get_db)):
+    """
+    Liefert das interaktive Dashboard (wenn eingeloggt) oder
+    die verkaufsstarke Premium-Landingpage (wenn nicht eingeloggt).
+    """
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    
+    # Falls nicht eingeloggt -> Zeige Premium-Landingpage mit ROI-Rechner
+    if not session_id or session_id not in sessions:
+        return templates.TemplateResponse(
+            name="landingpage.html",
+            context={"request": request}
+        )
+        
+    # Falls eingeloggt -> Hole User-Details und zeige Dashboard
+    user_session = sessions[session_id]
+    user_id = user_session["user_id"]
+    
+    # Hole registrierte Webseiten des Kunden
+    websites = db.query(Website).filter(Website.user_id == user_id).all()
+    
     return templates.TemplateResponse(
-        request=request,
-        name="setup.html",
-        context=_setup_context(request),
+        name="dashboard.html",
+        context={
+            "request": request,
+            "email": user_session["email"],
+            "websites": websites
+        }
     )
 
-
-@app.post("/setup")
-async def setup_submit(
-    request: Request,
-    primary_site: str = Form(""),
-    track_apex: str | None = Form(None),
-    track_subdomains: str | None = Form(None),
-    permissive: str | None = Form(None),
-):
-    show_skip = os.environ.get("PULSETRACK_ALLOW_PERMISSIVE_SETUP", "").lower() in ("1", "true", "yes")
-
-    if permissive and show_skip:
-        database.configure_permissive_dev()
-        return RedirectResponse(url="/?configured=1", status_code=303)
-
-    try:
-        database.configure_from_setup(
-            primary_site=primary_site,
-            track_apex=track_apex == "1",
-            track_subdomains=track_subdomains == "1",
-        )
-    except ValueError as exc:
-        return templates.TemplateResponse(
-            request=request,
-            name="setup.html",
-            context=_setup_context(
-                request,
-                error=str(exc),
-                primary_site=primary_site,
-                track_apex=track_apex == "1",
-                track_subdomains=track_subdomains == "1",
-            ),
-        )
-
-    return RedirectResponse(url="/?configured=1", status_code=303)
-
-
-@app.get("/", response_class=HTMLResponse)
-async def get_dashboard(request: Request):
-    config = database.get_install_config()
-    if not config.is_active:
-        return RedirectResponse(url="/setup", status_code=303)
-
-    try:
-        summary = database.get_analytics_summary()
-        setup_done = request.query_params.get("configured") == "1"
-        return templates.TemplateResponse(
-            request=request,
-            name="dashboard.html",
-            context={
-                "summary": summary,
-                "install_config": config,
-                "integration_snippet": build_integration_snippet(_request_base_url(request)),
-                "setup_done": setup_done,
-            },
-        )
-    except Exception as e:
-        logger.error(f"Fehler beim Rendern des Dashboards: {e}")
-        raise HTTPException(status_code=500, detail="Error generating dashboard view.") from e
+@app.get("/login", response_class=HTMLResponse)
+@app.get("/register", response_class=HTMLResponse)
+async def show_auth_pages(request: Request):
+    """Zeigt die einheitliche Login- & Registrierungsseite."""
+    return templates.TemplateResponse(
+        name="auth.html",
+        context={"request": request}
+    )

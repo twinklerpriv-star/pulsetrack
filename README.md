@@ -27,6 +27,15 @@ PulseTrack ist ein extrem leichtgewichtiges, datenschutzfreundliches und selbst 
 
 ## Installation & Startanleitung
 
+### Windows (ohne Befehle – per Doppelklick)
+
+Im Ordner `01`:
+
+1. **`START-HIER.bat`** oder einmalig **`install.bat`**
+2. **`start.bat`** – startet den Server und öffnet den Setup-Assistenten im Browser
+
+### Mit uv (Kommandozeile)
+
 Stellen Sie sicher, dass Sie den modernen Python-Paketmanager **`uv`** installiert haben.
 
 ### 1. Abhängigkeiten installieren
@@ -49,7 +58,16 @@ Starten Sie den lokalen Web- und Analytics-Server mit Uvicorn:
 uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-*   **Das Analyse-Dashboard** ist unter [http://127.0.0.1:8000/](http://127.0.0.1:8000/) erreichbar.
+**Windows (ohne `uv`):** Nutzen Sie den Python-Launcher `py`:
+
+```bash
+py -m pip install fastapi uvicorn jinja2 pydantic
+py -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Beim ersten Start leitet PulseTrack auf den **Setup-Assistenten** um: [http://127.0.0.1:8000/setup](http://127.0.0.1:8000/setup)
+
+*   **Das Analyse-Dashboard** ist unter [http://127.0.0.1:8000/](http://127.0.0.1:8000/) erreichbar (nach abgeschlossener Einrichtung).
 *   **Der JS-Tracker** ist unter [http://127.0.0.1:8000/tracker.js](http://127.0.0.1:8000/tracker.js) abrufbar.
 
 ---
@@ -71,6 +89,12 @@ Um die Einhaltung unserer Code-Qualitätsregeln zu überprüfen, können Sie fol
 ### Tests ausführen (pytest)
 ```bash
 uv run pytest
+```
+
+**Windows:**
+```bash
+py -m pip install pytest httpx fastapi uvicorn jinja2 pydantic
+py -m pytest
 ```
 
 ### Code-Qualität prüfen (ruff)

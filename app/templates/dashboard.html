@@ -309,6 +309,37 @@
             font-weight: 500;
             color: var(--text-primary);
         }
+
+        .setup-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .setup-bar a {
+            color: #c4b5fd;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .setup-bar a:hover { color: #fff; }
+
+        .setup-done {
+            border: 1px solid rgba(16, 185, 129, 0.28);
+            background: rgba(16, 185, 129, 0.1);
+            color: #a7f3d0;
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1rem;
+            font-size: 0.88rem;
+        }
     </style>
 </head>
 <body>
@@ -326,6 +357,28 @@
                 System Live
             </div>
         </header>
+
+        {% if setup_done %}
+        <div class="setup-done">
+            Einrichtung gespeichert. Das Tracking-Dashboard wurde automatisch geöffnet.
+        </div>
+        {% endif %}
+
+        {% if install_config %}
+        <div class="setup-bar">
+            <span>
+                {% if install_config.permissive %}
+                Tracking-Modus: Entwicklung (alle URLs)
+                {% else %}
+                Getrackte Website(s):
+                {% for origin in install_config.allowed_origins %}
+                    <strong style="color: var(--text-primary);">{{ origin }}</strong>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+                {% endif %}
+            </span>
+            <a href="/setup">Konfiguration ändern</a>
+        </div>
+        {% endif %}
 
         <!-- KPI Grid -->
         <section class="kpi-grid">
