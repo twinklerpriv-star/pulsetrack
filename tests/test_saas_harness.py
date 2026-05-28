@@ -377,3 +377,47 @@ def test_health_endpoint():
     assert data["status"] == "healthy"
     assert "queue_size" in data
     assert data["max_queue_size"] == 10000
+
+
+def test_public_demo_endpoint():
+    """Testet den öffentlichen Demo-Statistiken Endpoint auf korrekte Struktur."""
+    response = client.get("/api/demo/stats")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["website_id"] == 999
+    assert data["domain"] == "https://demo.pulsetrack.io"
+    assert "total_hits" in data
+    assert "unique_visitors" in data
+    assert "live_visitors" in data
+    assert len(data["top_pages"]) == 5
+    assert len(data["top_referrers"]) == 5
+
+
+def test_avv_sign_flow(db_session):
+    """Testet den revisionssicheren AVV-Zustimmungs-Workflow per API."""
+    # 1. Test-User erstellen
+    user = User(email="avv_sign_test@pepi.at", password_hash="hash", created_at="2026-05-28", subscription_status="trial")
+    db_session.add(user)
+    db_session.commit()
+
+    # 2. Session simulieren
+    session_id = secrets.token_hex(32)
+    sessions[session_id] = {"user_id": user.id, "email": user.email}
+
+    # 3. AVV signieren
+    response = client.post(
+        "/api/avv/sign",
+        data={"avv_version": "1.0"},
+        headers={"Cookie": f"{SESSION_COOKIE_NAME}={session_id}"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "signed"
+    assert "signature_hash" in data
+
+    # 4. Datenbank verifizieren
+    from app.models.user import UserAVVSignature
+    signature = db_session.query(UserAVVSignature).filter(UserAVVSignature.user_id == user.id).first()
+    assert signature is not None
+    assert signature.avv_version == "1.0"
+    assert signature.signed_from_ip in ("127.0.0.0", "IPv6")  # Anonymisiertes Format

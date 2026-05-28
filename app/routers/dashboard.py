@@ -119,3 +119,76 @@ async def get_dashboard_stats(
     except Exception as e:
         logger.error(f"Fehler bei der Datenaggregation für Website {website_id}: {e}")
         raise HTTPException(status_code=500, detail="Error generating website statistics.")
+
+
+@router.get("/api/demo/stats")
+async def get_demo_stats():
+    """
+    Öffentlicher Demo-Endpoint.
+    Liefert dynamische, realistische Besucherstatistiken zur Demonstration.
+    """
+    import random
+    from datetime import datetime, timezone
+    
+    # Simuliere dynamisch schwankende Werte
+    base_hits = 12450
+    base_uniques = 3820
+    
+    # Kleine zufällige Schwankungen basierend auf der aktuellen Sekunde
+    sec = datetime.now(tz=timezone.utc).second
+    hits_variation = int(random.uniform(5, 50) * (sec + 1))
+    uniques_variation = int(hits_variation * 0.3)
+    
+    live_visitors = int(random.uniform(12, 45) + (sec % 10))
+    
+    # Top Pages
+    top_pages = [
+        {"url": "https://demo.pulsetrack.io/", "count": int(random.uniform(3000, 4000))},
+        {"url": "https://demo.pulsetrack.io/blog/cookie-free-tracking", "count": int(random.uniform(1500, 2000))},
+        {"url": "https://demo.pulsetrack.io/pricing", "count": int(random.uniform(800, 1200))},
+        {"url": "https://demo.pulsetrack.io/setup", "count": int(random.uniform(500, 700))},
+        {"url": "https://demo.pulsetrack.io/demo", "count": int(random.uniform(300, 500))}
+    ]
+    top_pages.sort(key=lambda x: x["count"], reverse=True)
+
+    # Top Referrers
+    top_referrers = [
+        {"referrer": "Direct / Bookmark", "count": int(random.uniform(4000, 5000))},
+        {"referrer": "https://google.com", "count": int(random.uniform(2500, 3500))},
+        {"referrer": "https://github.com", "count": int(random.uniform(1200, 1800))},
+        {"referrer": "https://twitter.com", "count": int(random.uniform(800, 1200))},
+        {"referrer": "https://news.ycombinator.com", "count": int(random.uniform(500, 900))}
+    ]
+    top_referrers.sort(key=lambda x: x["count"], reverse=True)
+
+    # Browsers
+    browsers = [
+        {"browser": "Chrome", "count": int(random.uniform(5000, 6000))},
+        {"browser": "Firefox", "count": int(random.uniform(2000, 2500))},
+        {"browser": "Safari", "count": int(random.uniform(1500, 2000))},
+        {"browser": "Edge", "count": int(random.uniform(800, 1200))},
+        {"browser": "Other", "count": int(random.uniform(200, 500))}
+    ]
+    browsers.sort(key=lambda x: x["count"], reverse=True)
+
+    # OS
+    operating_systems = [
+        {"os": "Windows", "count": int(random.uniform(4000, 5000))},
+        {"os": "macOS", "count": int(random.uniform(2500, 3500))},
+        {"os": "Linux", "count": int(random.uniform(1200, 1800))},
+        {"os": "iOS", "count": int(random.uniform(800, 1200))},
+        {"os": "Android", "count": int(random.uniform(700, 1100))}
+    ]
+    operating_systems.sort(key=lambda x: x["count"], reverse=True)
+
+    return {
+        "website_id": 999,
+        "domain": "https://demo.pulsetrack.io",
+        "total_hits": base_hits + hits_variation,
+        "unique_visitors": base_uniques + uniques_variation,
+        "live_visitors": live_visitors,
+        "top_pages": top_pages,
+        "top_referrers": top_referrers,
+        "browsers": browsers,
+        "operating_systems": operating_systems
+    }

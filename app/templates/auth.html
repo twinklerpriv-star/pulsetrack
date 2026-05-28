@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseTrack - Anmelden / Registrieren</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #050816;
+            --card-bg: rgba(15, 23, 42, 0.55);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-gradient: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            --radius-lg: 24px;
+            --radius-md: 12px;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.18) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.18) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            overflow-x: hidden;
+        }
+
+        /* Logo Link */
+        .logo-container {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .logo-badge {
+            background: var(--accent-gradient);
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            font-size: 1.15rem;
+            color: white;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.35rem;
+            color: white;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Auth Card */
+        .auth-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 440px;
+            padding: 3rem 2.5rem;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .card-glowing {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+
+        /* Toggle Header */
+        .auth-header {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .auth-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .auth-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .auth-toggle {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 30px;
+            padding: 0.25rem;
+            display: flex;
+            position: relative;
+            margin-top: 0.5rem;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.88rem;
+            padding: 0.5rem 0;
+            cursor: pointer;
+            z-index: 1;
+            transition: var(--transition-smooth);
+        }
+
+        .toggle-btn.active {
+            color: white;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            width: 50%;
+            height: calc(100% - 0.5rem);
+            background: var(--accent-gradient);
+            border-radius: 25px;
+            top: 0.25rem;
+            left: 0.25rem;
+            transition: var(--transition-smooth);
+            z-index: 0;
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Forms */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .input-group label {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            padding: 0.85rem 1rem;
+            color: white;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+
+        .input-field:focus {
+            border-color: var(--accent-purple);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+        }
+
+        /* Error Box */
+        .error-box {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1rem;
+            color: #fca5a5;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Buttons */
+        .btn-submit {
+            background: var(--accent-gradient);
+            color: white;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.85rem;
+            border-radius: var(--radius-md);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25);
+            margin-top: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.45);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Logo -->
+    <a href="/" class="logo-container">
+        <div class="logo-badge">P</div>
+        <span class="logo-text">PulseTrack</span>
+    </a>
+
+    <!-- Auth Card -->
+    <div class="auth-card">
+        <div class="card-glowing"></div>
+        
+        <div class="auth-header">
+            <h2 id="auth-title" class="auth-title">Willkommen zurück</h2>
+            <p id="auth-subtitle" class="auth-subtitle">Melden Sie sich an, um Ihr Analytics-Dashboard zu öffnen.</p>
+            
+            <div class="auth-toggle">
+                <div class="toggle-slider" id="slider"></div>
+                <button type="button" class="toggle-btn active" id="btn-login" onclick="setMode('login')">Anmelden</button>
+                <button type="button" class="toggle-btn" id="btn-register" onclick="setMode('register')">Registrieren</button>
+            </div>
+        </div>
+
+        <!-- Error Box -->
+        <div class="error-box" id="error-box">
+            ⚠️ <span id="error-text">Ein Fehler ist aufgetreten.</span>
+        </div>
+
+        <!-- Formular -->
+        <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+            <div class="input-group">
+                <label for="email">E-Mail-Adresse</label>
+                <input type="email" id="email" class="input-field" placeholder="beispiel@domain.de" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">Passwort</label>
+                <input type="password" id="password" class="input-field" placeholder="••••••••••••" required>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn-submit">Anmelden</button>
+        </form>
+    </div>
+
+    <script>
+        let currentMode = 'login';
+
+        function setMode(mode) {
+            if (mode === currentMode) return;
+            currentMode = mode;
+
+            const slider = document.getElementById('slider');
+            const btnLogin = document.getElementById('btn-login');
+            const btnRegister = document.getElementById('btn-register');
+            const title = document.getElementById('auth-title');
+            const subtitle = document.getElementById('auth-subtitle');
+            const submitBtn = document.getElementById('submit-btn');
+            const errorBox = document.getElementById('error-box');
+
+            errorBox.style.display = 'none';
+
+            if (mode === 'login') {
+                slider.style.left = '0.25rem';
+                btnLogin.classList.add('active');
+                btnRegister.classList.remove('active');
+                
+                title.innerText = 'Willkommen zurück';
+                subtitle.innerText = 'Melden Sie sich an, um Ihr Analytics-Dashboard zu öffnen.';
+                submitBtn.innerText = 'Anmelden';
+            } else {
+                slider.style.left = 'calc(50% - 0.25rem)';
+                btnRegister.classList.add('active');
+                btnLogin.classList.remove('active');
+
+                title.innerText = 'Konto erstellen';
+                subtitle.innerText = 'Starten Sie Ihre 14-tägige kostenlose Testphase.';
+                submitBtn.innerText = 'Konto erstellen';
+            }
+        }
+
+        // Automatisch den Modus basierend auf der aktuellen URL setzen (/register -> registrieren)
+        if (window.location.pathname === '/register') {
+            setMode('register');
+        }
+
+        async function handleAuthSubmit(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const errorBox = document.getElementById('error-box');
+            const errorText = document.getElementById('error-text');
+            const submitBtn = document.getElementById('submit-btn');
+
+            errorBox.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.innerText = currentMode === 'login' ? 'Melde an...' : 'Erstelle Konto...';
+
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('password', password);
+
+            const endpoint = currentMode === 'login' ? '/login' : '/register';
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    // Erfolgreich eingeloggt oder registriert -> Weiterleitung zum Dashboard
+                    window.location.href = '/';
+                } else {
+                    const data = await response.json();
+                    errorText.innerText = data.detail || 'Fehler beim Anmelden. Bitte überprüfen Sie Ihre Eingaben.';
+                    errorBox.style.display = 'flex';
+                    
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = currentMode === 'login' ? 'Anmelden' : 'Konto erstellen';
+                }
+            } catch (e) {
+                console.error("Auth-Fehler:", e);
+                errorText.innerText = 'Netzwerkfehler. Bitte Internetverbindung prüfen.';
+                errorBox.style.display = 'flex';
+                
+                submitBtn.disabled = false;
+                submitBtn.innerText = currentMode === 'login' ? 'Anmelden' : 'Konto erstellen';
+            }
+        }
+    </script>
+</body>
+</html>

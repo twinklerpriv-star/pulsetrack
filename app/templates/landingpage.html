@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseTrack - Cookie-freie Web-Analytics | Premium Landingpage</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Design System & Variablen */
+        :root {
+            --bg-color: #050816;
+            --card-bg: rgba(15, 23, 42, 0.45);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-purple: #8b5cf6;
+            --accent-cyan: #06b6d4;
+            --accent-gradient: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header / Nav */
+        header {
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--card-border);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(5, 8, 22, 0.7);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .logo-badge {
+            background: var(--accent-gradient);
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 900;
+            font-size: 1.25rem;
+            color: white;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            color: white;
+            background: linear-gradient(to right, #ffffff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: var(--transition-smooth);
+        }
+
+        .nav-links a:hover {
+            color: white;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.65rem 1.5rem;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: var(--transition-smooth);
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(139, 92, 246, 0.55);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 5rem 0 3rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero-badge {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            color: #c4b5fd;
+            padding: 0.4rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: inline-flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .hero-badge span {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            line-height: 1.15;
+            background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            max-width: 720px;
+            margin: 0 auto 2.5rem auto;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 4rem;
+        }
+
+        /* Glass Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 2.25rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-glowing {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, transparent 75%);
+            top: -90px;
+            right: -90px;
+            pointer-events: none;
+            border-radius: 50%;
+        }
+
+        /* Live Demo Dashboard Section */
+        .demo-section {
+            padding: 4rem 0;
+        }
+
+        .demo-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .demo-title h2 {
+            font-size: 2.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .demo-title p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .demo-dashboard {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .demo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .demo-live-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .demo-live-badge span {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            animation: pulse 1.8s infinite;
+        }
+
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .demo-kpi-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .demo-kpi-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-kpi-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.25rem;
+            font-weight: 700;
+            background: linear-gradient(to right, white, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .demo-list-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+        }
+
+        .demo-list-card h4 {
+            font-size: 1.05rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .demo-list-card h4::before {
+            content: '';
+            width: 3px;
+            height: 14px;
+            background: var(--accent-cyan);
+            border-radius: 2px;
+            display: inline-block;
+        }
+
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .demo-table td {
+            padding: 0.65rem 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .demo-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .demo-table td.count {
+            text-align: right;
+            font-weight: 600;
+            color: var(--accent-cyan);
+        }
+
+        /* USPs / Features Section */
+        .features {
+            padding: 6rem 0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .feature-card {
+            transition: var(--transition-smooth);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(139, 92, 246, 0.25);
+        }
+
+        .feature-icon {
+            background: var(--accent-gradient);
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+        }
+
+        .feature-card h3 {
+            font-size: 1.35rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* ROI Umsatz-Kalkulator */
+        .roi-section {
+            padding: 5rem 0;
+        }
+
+        .roi-container {
+            max-width: 850px;
+            margin: 0 auto;
+        }
+
+        .roi-title {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+
+        .roi-title h2 {
+            font-size: 2.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .roi-title p {
+            color: var(--text-secondary);
+        }
+
+        .roi-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .roi-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        .roi-slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .roi-slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .roi-slider-header span.value {
+            color: var(--accent-cyan);
+            font-weight: 700;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 9999px;
+            outline: none;
+            -webkit-appearance: none;
+            transition: var(--transition-smooth);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+            transition: var(--transition-smooth);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .roi-output-card {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 2.5rem 2rem;
+        }
+
+        .roi-output-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .roi-output-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--accent-cyan);
+            line-height: 1;
+            margin-bottom: 1.25rem;
+            text-shadow: 0 0 30px rgba(6, 182, 212, 0.35);
+        }
+
+        .roi-output-desc {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        /* Integration Tab Sektion */
+        .integration-section {
+            padding: 5rem 0;
+        }
+
+        .integration-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .integration-tabs {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            padding: 0.6rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .tab-btn.active {
+            background: rgba(139, 92, 246, 0.12);
+            border-color: var(--accent-purple);
+            color: white;
+        }
+
+        .code-container {
+            background: rgba(10, 15, 30, 0.7);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: white;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Preistabelle */
+        .pricing {
+            padding: 6rem 0;
+        }
+
+        .pricing-title {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .pricing-title h2 {
+            font-size: 2.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .pricing-title p {
+            color: var(--text-secondary);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem 2.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(16px);
+        }
+
+        .pricing-card.popular {
+            border-color: var(--accent-purple);
+            background: rgba(139, 92, 246, 0.03);
+            transform: scale(1.03);
+        }
+
+        .pricing-card.popular::after {
+            content: "Beliebt";
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: var(--accent-gradient);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .pricing-card.popular:hover {
+            transform: translateY(-4px) scale(1.03);
+            border-color: var(--accent-purple);
+        }
+
+        .pricing-header h3 {
+            font-size: 1.35rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .pricing-desc {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            min-height: 2.5rem;
+        }
+
+        .pricing-price {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1;
+        }
+
+        .pricing-price span {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .pricing-features {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin: 1.25rem 0;
+            flex-grow: 1;
+        }
+
+        .pricing-features li {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .pricing-features li::before {
+            content: "✓";
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--card-border);
+            padding: 3rem 0;
+            background: rgba(5, 8, 22, 0.8);
+            backdrop-filter: blur(12px);
+        }
+
+        .footer-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+            font-size: 0.88rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-copy {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.6; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.6; }
+        }
+
+        /* Responsive Layouts */
+        @media (max-width: 992px) {
+            .features-grid, .pricing-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            .pricing-card.popular {
+                transform: none;
+            }
+            .pricing-card.popular:hover {
+                transform: translateY(-4px);
+            }
+            .roi-grid {
+                grid-template-columns: 1fr;
+            }
+            .kpi-row {
+                grid-template-columns: 1fr;
+            }
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+            .hero h1 {
+                font-size: 2.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <div class="logo-badge">P</div>
+                <span class="logo-text">PulseTrack</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Vorteile</a></li>
+                <li><a href="#demo">Live Demo</a></li>
+                <li><a href="#kalkulator">ROI Rechner</a></li>
+                <li><a href="#integration">Integration</a></li>
+                <li><a href="#preise">Preise</a></li>
+                <li><a href="/login" class="btn btn-secondary">Anmelden</a></li>
+                <li><a href="/register" class="btn btn-primary">Jetzt starten</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <!-- Hero Bereich -->
+    <section class="container hero">
+        <div class="hero-badge">
+            <span></span> Live-Verfolgung in Echtzeit
+        </div>
+        <h1>Web-Analytics ohne Cookie-Banner.<br>Blitzschnell. 100% DSGVO-konform.</h1>
+        <p>Erfasse die Besucherströme deines Webshops in Echtzeit – ohne lästige Einwilligungs-Banner, ohne Datenkraken und in weniger als 1 Minute eingerichtet.</p>
+        <div class="hero-ctas">
+            <a href="/register" class="btn btn-primary" style="font-size: 1.05rem; padding: 0.85rem 2rem;">Jetzt 14 Tage kostenlos testen</a>
+            <a href="#demo" class="btn btn-secondary" style="font-size: 1.05rem; padding: 0.85rem 2rem;">Live Demo ansehen</a>
+        </div>
+    </section>
+
+    <!-- Sektion: Live Demo Dashboard -->
+    <section id="demo" class="container demo-section">
+        <div class="demo-title">
+            <h2>Die Live-Demo erleben</h2>
+            <p>Sehen Sie PulseTrack in Aktion. Das eingebettete Dashboard visualisiert echte Echtzeitdaten unserer Demo-Website.</p>
+        </div>
+        
+        <div class="card demo-dashboard">
+            <div class="card-glowing"></div>
+            
+            <div class="demo-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-family: 'Outfit'; font-weight: 700; font-size: 1.15rem; color: white;">Shop-Statistiken</span>
+                    <span style="color: var(--text-secondary); font-size: 0.85rem;">(demo.pulsetrack.io)</span>
+                </div>
+                <div class="demo-live-badge">
+                    <span></span> 14 Besucher online
+                </div>
+            </div>
+
+            <!-- KPIs -->
+            <div class="kpi-row">
+                <div class="demo-kpi-card">
+                    <div class="demo-kpi-title">Seitenaufrufe (Hits)</div>
+                    <div id="demo-hits" class="demo-kpi-value">12.450</div>
+                </div>
+                <div class="demo-kpi-card">
+                    <div class="demo-kpi-title">Eindeutige Besucher</div>
+                    <div id="demo-uniques" class="demo-kpi-value">3.820</div>
+                </div>
+                <div class="demo-kpi-card">
+                    <div class="demo-kpi-title">Aktive Live-Besucher</div>
+                    <div id="demo-live" class="demo-kpi-value" style="color: var(--accent-cyan); text-shadow: 0 0 20px rgba(6, 182, 212, 0.25);">24</div>
+                </div>
+            </div>
+
+            <!-- Lists Grid -->
+            <div class="demo-grid">
+                <div class="demo-list-card">
+                    <h4>Beliebteste Seiten</h4>
+                    <table class="demo-table">
+                        <tbody id="demo-pages-tbody">
+                            <tr><td>Lädt Daten...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="demo-list-card">
+                    <h4>Top Verweise (Referrer)</h4>
+                    <table class="demo-table">
+                        <tbody id="demo-referrers-tbody">
+                            <tr><td>Lädt Daten...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sektion: Kern-Wertversprechen / USPs -->
+    <section id="features" class="container features">
+        <div class="demo-title" style="margin-bottom: 4rem;">
+            <h2>Entwickelt für modernen B2B E-Commerce</h2>
+            <p>PulseTrack kombiniert absolute Datenschutzkonformität mit unübertroffener Performance.</p>
+        </div>
+        
+        <div class="features-grid">
+            <!-- USP 1 -->
+            <div class="card feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3>Kein Cookie-Banner nötig</h3>
+                <p>Da PulseTrack 100% cookie-frei arbeitet und keine personenbezogenen Daten speichert, ist kein Cookie-Banner erforderlich. Das steigert deine Conversion-Rate sofort um bis zu 15%.</p>
+            </div>
+            <!-- USP 2 -->
+            <div class="card feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Ultraschnelles Lade-Skript</h3>
+                <p>Unser Tracking-Skript wiegt weniger als 1 Kilobyte (KB) und lädt absolut asynchron. Deine Google PageSpeed-Werte bleiben makellos und deine Kunden erleben keine Latenz.</p>
+            </div>
+            <!-- USP 3 -->
+            <div class="card feature-card">
+                <div class="feature-icon">🇪🇺</div>
+                <h3>Gehostet in Deutschland</h3>
+                <p>Volle DSGVO-Konformität garantiert. Alle Daten werden inISO-zertifizierten deutschen Rechenzentren gespeichert. Keine Datenweitergabe an Drittstaaten (USA-Schrems-II-sicher).</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sektion: ROI-Kalkulator -->
+    <section id="kalkulator" class="container roi-section">
+        <div class="roi-container card" style="background: rgba(15, 23, 42, 0.65);">
+            <div class="roi-title">
+                <h2>Umsatz-Rettungs-Kalkulator</h2>
+                <p>Berechnen Sie live, wie viel Umsatz Sie durch opt-out Cookie-Banner verlieren und mit PulseTrack retten.</p>
+            </div>
+            
+            <div class="roi-grid">
+                <div class="roi-inputs">
+                    <!-- Slider 1 -->
+                    <div class="roi-slider-group">
+                        <div class="roi-slider-header">
+                            <span>Monatliche Besucher</span>
+                            <span id="label-visitors" class="value">50.000</span>
+                        </div>
+                        <input type="range" id="slider-visitors" min="5000" max="500000" step="5000" value="50000">
+                    </div>
+                    
+                    <!-- Slider 2 -->
+                    <div class="roi-slider-group">
+                        <div class="roi-slider-header">
+                            <span>Ø Warenkorbwert (AOV)</span>
+                            <span id="label-aov" class="value">80 €</span>
+                        </div>
+                        <input type="range" id="slider-aov" min="10" max="300" step="5" value="80">
+                    </div>
+
+                    <!-- Slider 3 -->
+                    <div class="roi-slider-group">
+                        <div class="roi-slider-header">
+                            <span>Banner-Ablehnungsrate</span>
+                            <span id="label-bounce" class="value">12 %</span>
+                        </div>
+                        <input type="range" id="slider-bounce" min="5" max="40" step="1" value="12">
+                    </div>
+                </div>
+                
+                <div class="card roi-output-card">
+                    <div class="roi-output-title">Monatlicher Mehrumsatz</div>
+                    <div id="roi-value" class="roi-output-value">960 €</div>
+                    <div class="roi-output-desc">
+                        Geretteter Jahresumsatz: <strong id="roi-yearly" style="color: white;">11.520 €</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sektion: Integrationsanleitungen -->
+    <section id="integration" class="container integration-section">
+        <div class="integration-container">
+            <div class="demo-title">
+                <h2>In 1 Minute einsatzbereit</h2>
+                <p>Kopieren Sie das Skript oder nutzen Sie eine unserer schnellen Integrationen.</p>
+            </div>
+            
+            <div class="integration-tabs">
+                <button class="tab-btn active" onclick="switchTab('html')">Standard HTML</button>
+                <button class="tab-btn" onclick="switchTab('magento')">Magento 2</button>
+                <button class="tab-btn" onclick="switchTab('wordpress')">WordPress</button>
+                <button class="tab-btn" onclick="switchTab('shopify')">Shopify</button>
+            </div>
+
+            <div class="card">
+                <div id="code-block" class="code-container">
+                    <button class="copy-btn" onclick="copyCode()">Kopieren</button>
+                    <pre id="code-content">&lt;script src="https://pulsetrack.io/tracker.js" defer&gt;&lt;/script&gt;</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sektion: Preistabelle -->
+    <section id="preise" class="container pricing">
+        <div class="pricing-title">
+            <h2>Einfache, transparente Tarife</h2>
+            <p>Starten Sie mit unserer 14-tägigen kostenlosen Testphase. Keine Kreditkarte erforderlich.</p>
+        </div>
+        
+        <div class="pricing-grid">
+            <!-- Starter -->
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <h3>Starter</h3>
+                    <p class="pricing-desc">Perfekt für Blogger und kleine Webprojekte.</p>
+                </div>
+                <div class="pricing-price">9 €<span>/ Monat</span></div>
+                <ul class="pricing-features">
+                    <li>Bis zu 3 Webseiten</li>
+                    <li>50.000 Hits / Monat</li>
+                    <li>DSGVO-konforme Anonymisierung</li>
+                    <li>14 Tage Datenaufbewahrung</li>
+                    <li>E-Mail Support</li>
+                </ul>
+                <a href="/register" class="btn btn-secondary">Starter wählen</a>
+            </div>
+
+            <!-- Business -->
+            <div class="pricing-card popular">
+                <div class="pricing-header">
+                    <h3>Business</h3>
+                    <p class="pricing-desc">Ideal für Magento und wachsende Webshops.</p>
+                </div>
+                <div class="pricing-price">29 €<span>/ Monat</span></div>
+                <ul class="pricing-features">
+                    <li>Bis zu 10 Webseiten</li>
+                    <li>500.000 Hits / Monat</li>
+                    <li>Echtzeit-Verifizierung & Queue-Worker</li>
+                    <li>12 Monate Datenaufbewahrung</li>
+                    <li>Reverse-Charge B2B-Steuer</li>
+                    <li>Priorisierter E-Mail Support</li>
+                </ul>
+                <a href="/register" class="btn btn-primary">Business wählen</a>
+            </div>
+
+            <!-- Enterprise -->
+            <div class="pricing-card">
+                <div class="pricing-header">
+                    <h3>Enterprise</h3>
+                    <p class="pricing-desc">Für Agenturen, SaaS-Betreiber & High-Traffic Portale.</p>
+                </div>
+                <div class="pricing-price">79 €<span>/ Monat</span></div>
+                <ul class="pricing-features">
+                    <li>Unbegrenzte Webseiten</li>
+                    <li>Unbegrenzte Hits / Monat</li>
+                    <li>Eigene SSL Domain-Verifizierung</li>
+                    <li>Unbegrenzte Datenaufbewahrung</li>
+                    <li>White-Label Reselling</li>
+                    <li>Persönlicher Slack-Support</li>
+                </ul>
+                <a href="/register" class="btn btn-secondary">Enterprise wählen</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-grid">
+            <a href="#" class="logo">
+                <div class="logo-badge">P</div>
+                <span class="logo-text">PulseTrack</span>
+            </a>
+            <div class="footer-copy">
+                &copy; 2026 PulseTrack. Alle Rechte vorbehalten. Made with 💜 in Europe.
+            </div>
+            <ul class="footer-links">
+                <li><a href="#">Impressum</a></li>
+                <li><a href="#">Datenschutzerklärung</a></li>
+                <li><a href="#">Nutzungsbedingungen</a></li>
+            </ul>
+        </div>
+    </footer>
+
+    <!-- Scripts (Demo Data & ROI Calculations) -->
+    <script>
+        // 1. Live-Demo-Dashboard Updater
+        async function fetchDemoStats() {
+            try {
+                const response = await fetch('/api/demo/stats');
+                if (!response.ok) return;
+                const data = await response.json();
+                
+                // Zahlen mit Tausenderpunkten formatieren
+                document.getElementById('demo-hits').innerText = data.total_hits.toLocaleString('de-DE');
+                document.getElementById('demo-uniques').innerText = data.unique_visitors.toLocaleString('de-DE');
+                document.getElementById('demo-live').innerText = data.live_visitors;
+                
+                // Online Badge text
+                document.querySelector('.demo-live-badge').innerHTML = `<span></span> ${data.live_visitors} Besucher online`;
+
+                // Pages Tabelle
+                let pagesHtml = '';
+                data.top_pages.forEach(page => {
+                    pagesHtml += `<tr>
+                        <td title="${page.url}">${page.url}</td>
+                        <td class="count">${page.count.toLocaleString('de-DE')}</td>
+                    </tr>`;
+                });
+                document.getElementById('demo-pages-tbody').innerHTML = pagesHtml;
+
+                // Referrers Tabelle
+                let refHtml = '';
+                data.top_referrers.forEach(ref => {
+                    refHtml += `<tr>
+                        <td title="${ref.referrer}">${ref.referrer}</td>
+                        <td class="count">${ref.count.toLocaleString('de-DE')}</td>
+                    </tr>`;
+                });
+                document.getElementById('demo-referrers-tbody').innerHTML = refHtml;
+
+            } catch (e) {
+                console.error("Fehler beim Abrufen der Demo-Statistiken:", e);
+            }
+        }
+
+        // Initiale Ladung und Intervall
+        fetchDemoStats();
+        setInterval(fetchDemoStats, 3000);
+
+        // 2. ROI Kalkulator Logik
+        const sliderVisitors = document.getElementById('slider-visitors');
+        const sliderAOV = document.getElementById('slider-aov');
+        const sliderBounce = document.getElementById('slider-bounce');
+
+        const labelVisitors = document.getElementById('label-visitors');
+        const labelAOV = document.getElementById('label-aov');
+        const labelBounce = document.getElementById('label-bounce');
+
+        const roiValue = document.getElementById('roi-value');
+        const roiYearly = document.getElementById('roi-yearly');
+
+        function calculateROI() {
+            const visitors = parseInt(sliderVisitors.value);
+            const aov = parseInt(sliderAOV.value);
+            const bounce = parseInt(sliderBounce.value) / 100.0;
+            
+            // Konvertierungsschätzung (2% durchschnittlich im E-Commerce)
+            const conversionRate = 0.02;
+            
+            // Berechnung: Besucher * ConversionRate * AOV * BounceRate (verlorene Umsätze)
+            const rescuedMonthly = Math.round(visitors * conversionRate * aov * bounce);
+            const rescuedYearly = rescuedMonthly * 12;
+
+            labelVisitors.innerText = visitors.toLocaleString('de-DE');
+            labelAOV.innerText = aov + ' €';
+            labelBounce.innerText = Math.round(bounce * 100) + ' %';
+
+            roiValue.innerText = rescuedMonthly.toLocaleString('de-DE') + ' €';
+            roiYearly.innerText = rescuedYearly.toLocaleString('de-DE') + ' €';
+        }
+
+        sliderVisitors.addEventListener('input', calculateROI);
+        sliderAOV.addEventListener('input', calculateROI);
+        sliderBounce.addEventListener('input', calculateROI);
+
+        calculateROI(); // Initiale Berechnung
+
+        // 3. Integration Tab Switcher
+        const codes = {
+            html: `&lt;script src="${window.location.origin}/tracker.js" defer&gt;&lt;/script&gt;`,
+            magento: `&lt;!-- Magento 2 Head Snippet --&gt;\n&lt;script src="${window.location.origin}/tracker.js" defer&gt;&lt;/script&gt;`,
+            wordpress: `&lt;!-- WordPress Header.php Script --&gt;\n&lt;script src="${window.location.origin}/tracker.js" defer&gt;&lt;/script&gt;`,
+            shopify: `&lt;!-- Shopify theme.liquid Head Script --&gt;\n&lt;script src="${window.location.origin}/tracker.js" defer&gt;&lt;/script&gt;`
+        };
+
+        function switchTab(platform) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('code-content').innerHTML = codes[platform];
+        }
+
+        // Setze Standard-HTML Code bei Page Load
+        setTimeout(() => {
+            codes.html = `&lt;script src="${window.location.origin}/tracker.js" defer&gt;&lt;/script&gt;`;
+            codes.magento = `&lt;!-- Magento 2 Head Snippet --&gt;\n&lt;script src="${window.location.origin}/tracker.js" defer&gt;&lt;/script&gt;`;
+            codes.wordpress = `&lt;!-- WordPress Header.php Script --&gt;\n&lt;script src="${window.location.origin}/tracker.js" defer&gt;&lt;/script&gt;`;
+            codes.shopify = `&lt;!-- Shopify theme.liquid Head Script --&gt;\n&lt;script src="${window.location.origin}/tracker.js" defer&gt;&lt;/script&gt;`;
+            document.getElementById('code-content').innerHTML = codes.html;
+        }, 100);
+
+        function copyCode() {
+            const pre = document.getElementById('code-content');
+            const range = document.createRange();
+            range.selectNode(pre);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            try {
+                document.execCommand('copy');
+                const btn = document.querySelector('.copy-btn');
+                btn.innerText = 'Kopiert!';
+                setTimeout(() => btn.innerText = 'Kopieren', 2000);
+            } catch(e) {
+                console.error("Kopieren fehlgeschlagen:", e);
+            }
+            window.getSelection().removeAllRanges();
+        }
+    </script>
+</body>
+</html>
