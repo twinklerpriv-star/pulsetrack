@@ -18,7 +18,7 @@ logger = logging.getLogger("analytics_dashboard")
 router = APIRouter(tags=["Dashboard Stats"])
 
 @router.get("/api/dashboard/stats")
-async def get_dashboard_stats(
+def get_dashboard_stats(
     website_id: int = Query(..., description="Die ID der zu analysierenden Website"),
     period: str = Query("30d", description="Zeitfenster: '24h', '7d', '30d', '12m'"),
     db: Session = Depends(get_db),
@@ -122,7 +122,7 @@ async def get_dashboard_stats(
 
 
 @router.get("/api/demo/stats")
-async def get_demo_stats():
+def get_demo_stats():
     """
     Öffentlicher Demo-Endpoint.
     Liefert dynamische, realistische Besucherstatistiken zur Demonstration.

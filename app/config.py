@@ -6,33 +6,50 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from functools import lru_cache
 from urllib.parse import urlparse
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, SecretStr, field_validator
 from pydantic_settings import BaseSettings
-
-DEFAULT_FALLBACK_SECRET = "pulsetrack-fallback-secret"
 
 
 class Settings(BaseSettings):
-    ANALYTICS_SALT_SECRET: str = DEFAULT_FALLBACK_SECRET
+    ANALYTICS_SALT_SECRET: SecretStr
     ANALYTICS_DB_PATH: str = "analytics.db"
     
     # Stripe Configuration
-    STRIPE_SECRET_KEY: str = "sk_test_mock"
+    STRIPE_SECRET_KEY: SecretStr
     STRIPE_PUBLISHABLE_KEY: str = "pk_test_mock"
-    STRIPE_WEBHOOK_SECRET: str = "whsec_mock"
+    STRIPE_WEBHOOK_SECRET: SecretStr
     STRIPE_PRICE_STARTER: str = "price_starter"
     STRIPE_PRICE_BUSINESS: str = "price_business"
     STRIPE_PRICE_ENTERPRISE: str = "price_enterprise"
+
+    # SMTP Configuration
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int | None = None
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: SecretStr | None = None
 
     model_config = ConfigDict(
         env_file=".env",
         extra="ignore"
     )
 
+    @field_validator("ANALYTICS_SALT_SECRET")
+    @classmethod
+    def secret_must_not_be_default(cls, v: SecretStr) -> SecretStr:
+        if v.get_secret_value() in ("change-me-in-production", "pulsetrack-fallback-secret"):
+            raise ValueError("ANALYTICS_SALT_SECRET must be changed in production!")
+        return v
 
-settings = Settings()
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+settings = get_settings()
 
 
 @dataclass
@@ -125,12 +142,16 @@ def url_matches_allowed(url: str, allowed_origins: list[str], track_subdomains: 
         if page_origin == allowed.lower():
             return True
 
-    if track_subdomains:
-        allowed_host = urlparse(allowed).netloc.lower()
-        base = _apex_host(allowed_host) or allowed_host
-        page_host = parsed.netloc.lower()
-        if page_host == base or page_host.endswith(f".{base}"):
-            return True
+        if track_subdomains:
+            try:
+                allowed_parsed = urlparse(allowed)
+                allowed_host = allowed_parsed.netloc.lower()
+                base = _apex_host(allowed_host) or allowed_host
+                page_host = parsed.netloc.lower()
+                if page_host == base or page_host.endswith(f".{base}"):
+                    return True
+            except Exception:
+                continue
 
     return False
 

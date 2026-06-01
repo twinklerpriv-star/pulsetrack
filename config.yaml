@@ -1,0 +1,8 @@
+cors:
+  whitelist:
+    - "http://localhost:8000"
+    - "http://127.0.0.1:8000"
+    - "https://pulsetrack.io"
+security:
+  cookie_secure: true
+  cookie_samesite: "Strict"

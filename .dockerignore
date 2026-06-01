@@ -1,0 +1,13 @@
+.git
+.venv
+__pycache__
+*.db
+*.log
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.pytest_cache
+.ruff_cache
+tests/

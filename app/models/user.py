@@ -1,11 +1,13 @@
 # SQLAlchemy Modell: User & UserAVVSignature
 #
-# Datum: 28.05.2026 | Version: 1.0 | Status: Aktiv gepflegt
+# Datum: 31.05.2026 | Version: 1.1 | Status: Aktiv gepflegt
+
+from datetime import datetime
 
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
-from app.database import Base
+from app.models.base import Base, UTCDateTime
 
 
 class User(Base):
@@ -17,7 +19,7 @@ class User(Base):
     stripe_customer_id = Column(String, nullable=True)
     stripe_subscription_id = Column(String, nullable=True)
     subscription_status = Column(String, nullable=False, default="trial")
-    created_at = Column(String, nullable=False)
+    created_at = Column(UTCDateTime, nullable=False, default=datetime.utcnow)
 
     # Beziehungen (Kaskadiertes Löschen: Löscht der User sein Konto, verschwinden alle seine Webseiten und Signaturen)
     websites = relationship("Website", back_populates="owner", cascade="all, delete-orphan")
@@ -30,7 +32,7 @@ class UserAVVSignature(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     avv_version = Column(String, nullable=False)
-    signed_at = Column(String, nullable=False)
+    signed_at = Column(UTCDateTime, nullable=False, default=datetime.utcnow)
     signed_from_ip = Column(String, nullable=False)
     signature_hash = Column(String, nullable=False)
 
@@ -43,4 +45,3 @@ class DailyKey(Base):
 
     day = Column(String, primary_key=True)  # e.g., "2026-05-28"
     key_value = Column(String, nullable=False)  # Stored as hex representation of 32-byte key
-

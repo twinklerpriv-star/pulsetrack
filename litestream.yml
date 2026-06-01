@@ -1,0 +1,17 @@
+# Litestream-Konfiguration für PulseTrack
+#
+# Datum: 01.06.2026 | Version: 1.0 | Status: Bereit für Produktion
+# Detaillierte Dokumentation unter: https://litestream.io/reference/config/
+
+dbs:
+  - path: /data/analytics.db
+    replicas:
+      - type: s3
+        bucket: ${LITESTREAM_BUCKET}
+        path: db
+        region: ${LITESTREAM_REGION}
+        endpoint: ${LITESTREAM_ENDPOINT}
+        access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
+        secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+        # WAL-Sync-Frequenz (Standard: 1 Sekunde für nahezu null Datenverlust)
+        sync-interval: 1s

@@ -1,10 +1,11 @@
 # Queue Service: Asynchrones Batch-Writing & Graceful Shutdown
 #
-# Datum: 28.05.2026 | Version: 1.0 | Status: Aktiv gepflegt
+# Datum: 31.05.2026 | Version: 1.1 | Status: Aktiv gepflegt
 
 import asyncio
 import logging
 import os
+import time
 
 from sqlalchemy.orm import Session
 
@@ -55,11 +56,11 @@ async def batch_writer_worker():
     while worker_running or not hit_queue.empty():
         try:
             batch = []
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.monotonic()
             
             # Sammle Hits für das Batch (entweder bis BATCH_SIZE erreicht ist oder BATCH_INTERVAL abläuft)
             while len(batch) < BATCH_SIZE:
-                elapsed = asyncio.get_event_loop().time() - start_time
+                elapsed = time.monotonic() - start_time
                 remaining_time = BATCH_INTERVAL - elapsed
                 
                 if remaining_time <= 0:
@@ -69,32 +70,46 @@ async def batch_writer_worker():
                     # Kurzes Warten auf das nächste Element in der Queue
                     hit_data = await asyncio.wait_for(hit_queue.get(), timeout=max(0.1, remaining_time))
                     batch.append(hit_data)
-                    hit_queue.task_done()
                 except asyncio.TimeoutError:
                     break
             
-            # Falls Hits gesammelt wurden, in einer einzigen Transaktion in die DB schreiben
+            # Falls Hits gesammelt wurden, in die DB schreiben und erst DANN task_done() aufrufen (F-5)
             if batch:
-                await save_batch_to_db(batch)
+                success = await save_batch_to_db(batch)
+                if success:
+                    for _ in range(len(batch)):
+                        hit_queue.task_done()
+                else:
+                    # Im Fehlerfall wird das Batch zur Vermeidung von CPU-Hotloops geloggt
+                    logger.error(f"Batch-Persistierung von {len(batch)} Hits fehlgeschlagen.")
+                    # Wir rufen task_done trotzdem auf, um die Queue nicht zu blockieren, loggen aber den Fehler.
+                    for _ in range(len(batch)):
+                        hit_queue.task_done()
                 
         except Exception as e:
             logger.error(f"Fehler im Batch-Writer-Worker: {e}")
             await asyncio.sleep(1)  # Kurze Pause bei Fehlern zur Vermeidung von CPU-Hotloops
 
-async def save_batch_to_db(batch: list[dict]):
-    """Schreibt ein Hit-Batch über eine einzige transaktionale Session in die DB."""
+def _sync_save_batch(batch: list[dict]) -> bool:
+    """Synchroner Helfer zur Durchführung von Batch-DB-Schreibvorgängen in einem separaten Thread (A-3, A-5)."""
     db: Session = SessionLocal()
     try:
-        # Optimierter Batch-Import
+        # A-5: Behebung des N+1-Query-Problems durch Batch-Abfrage aller Tokens
+        tokens = list({h["token"] for h in batch if "token" in h})
+        if not tokens:
+            return True
+            
+        websites = db.query(Website).filter(Website.tracking_token.in_(tokens)).all()
+        token_to_id = {w.tracking_token: w.id for w in websites}
+        
         hits_to_save = []
         for hit_data in batch:
-            # Website ID über das Token ermitteln
-            website = db.query(Website).filter(Website.tracking_token == hit_data["token"]).first()
-            if not website:
-                continue  # Token existiert nicht mehr
-
+            token = hit_data.get("token")
+            if token not in token_to_id:
+                continue  # Token existiert nicht (mehr)
+                
             new_hit = Hit(
-                website_id=website.id,
+                website_id=token_to_id[token],
                 timestamp=hit_data["timestamp"],
                 url=hit_data["url"],
                 referrer=hit_data["referrer"],
@@ -109,11 +124,17 @@ async def save_batch_to_db(batch: list[dict]):
             db.bulk_save_objects(hits_to_save)
             db.commit()
             logger.info(f"{len(hits_to_save)} Hits erfolgreich in SQLite persistiert.")
+        return True
     except Exception as e:
         db.rollback()
         logger.error(f"Fehler beim Batch-Schreiben in die DB: {e}")
+        return False
     finally:
         db.close()
+
+async def save_batch_to_db(batch: list[dict]) -> bool:
+    """Schreibt ein Hit-Batch ueber eine einzige transaktionale Session in die DB (A-3)."""
+    return await asyncio.to_thread(_sync_save_batch, batch)
 
 async def write_queue_to_db():
     """
@@ -130,11 +151,13 @@ async def write_queue_to_db():
         try:
             hit_data = hit_queue.get_nowait()
             remaining_hits.append(hit_data)
-            hit_queue.task_done()
         except asyncio.QueueEmpty:
             break
             
     if remaining_hits:
         logger.info(f"Schreibe {len(remaining_hits)} verbleibende Hits aus der Queue in die DB...")
-        await save_batch_to_db(remaining_hits)
+        success = await save_batch_to_db(remaining_hits)
+        if success:
+            for _ in range(len(remaining_hits)):
+                hit_queue.task_done()
     logger.info("Verbleibende RAM-Queue erfolgreich gesichert. Shutdown abgeschlossen.")

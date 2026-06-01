@@ -1,29 +1,47 @@
 # FastAPI Hauptanwendung (Modular & Enterprise-Ready)
 #
-# Datum: 28.05.2026 | Version: 3.0 | Status: Aktiv gepflegt
+# Datum: 31.05.2026 | Version: 3.1 | Status: Aktiv gepflegt
 
 import asyncio
 import logging
 import os
+import sys
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone, timedelta
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
 
-from app.database import Base, engine, get_db
-from app.models.user import User
-from app.models.website import Website
-from app.routers import auth_router, billing_router, caddy_router, dashboard_router, ingest_router
-from app.routers.auth import SESSION_COOKIE_NAME, sessions
+from app.database import Base, SessionLocal, engine
+from app.routers import (
+    account_router,
+    auth_router,
+    billing_router,
+    caddy_router,
+    dashboard_router,
+    ingest_router,
+    views_router,
+)
 from app.services.queue_worker import batch_writer_worker, hit_queue, write_queue_to_db
 from app.services.security import get_or_create_daily_hmac_key
 
 logger = logging.getLogger("analytics_main")
 logging.basicConfig(level=logging.INFO)
+
+async def retention_worker():
+    """Periodischer Task zur Ausführung der Datenbank-Bereinigung und HMAC-Key-Rotation (C-2, E-1)."""
+    from app.services.retention import prune_database
+    logger.info("Periodischer Datenbank-Retention-Worker gestartet.")
+    while True:
+        try:
+            # prune_database ist synchron, also im Thread-Pool ausführen
+            await asyncio.to_thread(prune_database)
+        except Exception as e:
+            logger.error(f"Fehler bei periodischer Datenbank-Retention: {e}")
+        # Alle 12 Stunden (43200 Sekunden) ausführen
+        await asyncio.sleep(43200)
 
 # 1. Asynchroner Lifespan-Handler zur Steuerung von Queue, DB & Key-Rotation
 @asynccontextmanager
@@ -34,13 +52,18 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
         logger.info("Datenbank-Schemata erfolgreich abgeglichen.")
         
-        # Initiiere den HMAC-Key für heute
-        db = next(get_db())
-        get_or_create_daily_hmac_key(db)
-        db.close()
+        # E-8: Sichere Initialisierung des daily HMAC-Keys über einen Context-Manager
+        with SessionLocal() as db:
+            get_or_create_daily_hmac_key(db)
         
         # Startet den asynchronen Queue-Schreib-Hintergrundprozess
         app.state.queue_task = asyncio.create_task(batch_writer_worker())
+        
+        # Start daily HMAC key rotation job (Component 2)
+        from app.jobs.rotate_key_job import schedule_daily_rotation
+        app.state.rotation_task = asyncio.create_task(schedule_daily_rotation())
+        if "pytest" not in sys.modules:
+            app.state.retention_task = asyncio.create_task(retention_worker())
         
         logger.info("Start-Sequenz erfolgreich abgeschlossen.")
     except Exception as e:
@@ -48,12 +71,22 @@ async def lifespan(app: FastAPI):
         
     yield
     
-    # Graceful Shutdown Sequence (SIGTERM Fänger)
+    # Graceful Shutdown Sequence (SIGTERM Fänger) (F-6)
     logger.warning("PulseTrack SaaS Engine wird gestoppt...")
     try:
-        # Queue-Task abbrechen und restliche Daten flushen
-        app.state.queue_task.cancel()
+        # Den Retention-Task beenden
+        if hasattr(app.state, "retention_task"):
+            app.state.retention_task.cancel()
+            
+        # F-6: Queue-Worker stoppen und restliche Daten sauber flushen
         await write_queue_to_db()
+        
+        # Den Background-Task kontrolliert und zeitbegrenzt beenden lassen
+        try:
+            await asyncio.wait_for(app.state.queue_task, timeout=3.0)
+        except asyncio.TimeoutError:
+            app.state.queue_task.cancel()
+            
         logger.info("Stop-Sequenz erfolgreich abgeschlossen.")
     except Exception as e:
         logger.error(f"Fehler bei Graceful Shutdown: {e}")
@@ -62,7 +95,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="PulseTrack SaaS",
     description="SaaS Web-Analytics - Blitzschnell, cookie-frei und 100% DSGVO-konform.",
-    version="3.0.0",
+    version="3.1.0",
     lifespan=lifespan
 )
 
@@ -77,26 +110,51 @@ async def get_tracker():
         return FileResponse(tracker_path, media_type="application/javascript")
     raise HTTPException(status_code=404, detail="Tracker script not found.")
 
-# Templates-Verzeichnis konfigurieren
-templates_dir = os.path.join(os.path.dirname(__file__), "templates")
-templates = Jinja2Templates(directory=templates_dir)
+# 3. CORS & Dynamic-Origin-Middleware (D-1)
+# Whitelist fuer credential-basierte B2B-API-Abfragen (CSRF-Schutz)
+allowed_origins = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://pulsetrack.io",  # Beispiel-Produktionsdomain
+]
 
-# 3. CORS & Dynamic-Origin-Middleware
+import yaml
+from pathlib import Path
+
+# Load CORS whitelist from config.yaml if present
+config_path = Path(__file__).parent.parent / "config.yaml"
+if config_path.is_file():
+    with open(config_path, "r", encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
+    allowed_origins = cfg.get("cors", {}).get("whitelist", [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "https://pulsetrack.io",
+    ])
+else:
+    # Fallback default whitelist
+    allowed_origins = [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "https://pulsetrack.io",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Dynamic validation is done at router-level in Ingestion-API
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type", "X-Caddy-Secret"],
 )
 
-# 4. Modulare API-Routers inkludieren
-app.include_router(auth_router)
-app.include_router(billing_router)
-app.include_router(ingest_router)
-app.include_router(caddy_router)
-app.include_router(dashboard_router)
-
+# 4. Modulare API-Routers inkludieren (E-2)
+app.include_router(views_router)       # UI Templates (E-2)
+app.include_router(auth_router)        # Authentifizierung
+app.include_router(account_router)     # DSGVO Konto-Loeschung (C-5)
+app.include_router(billing_router)     # Stripe Billing & Webhooks
+app.include_router(ingest_router)      # Analytics Hit Ingestion
+app.include_router(caddy_router)       # Caddy Dynamic SSL Proxy
+app.include_router(dashboard_router)   # Dashboard Statistiken
 
 @app.get("/api/health")
 async def health_check():
@@ -114,47 +172,3 @@ async def health_check():
         "queue_size": queue_size,
         "max_queue_size": 10000
     }
-
-# 5. UI Views (GET Endpunkte für Landingpage & Dashboard)
-@app.get("/", response_class=HTMLResponse)
-async def home_or_dashboard(request: Request, db: Session = Depends(get_db)):
-    """
-    Liefert das interaktive Dashboard (wenn eingeloggt) oder
-    die verkaufsstarke Premium-Landingpage (wenn nicht eingeloggt).
-    """
-    session_id = request.cookies.get(SESSION_COOKIE_NAME)
-    
-    # Falls nicht eingeloggt -> Zeige Premium-Landingpage mit ROI-Rechner
-    if not session_id or session_id not in sessions:
-        return templates.TemplateResponse(
-            name="landingpage.html",
-            context={"request": request}
-        )
-        
-    # Falls eingeloggt -> Hole User-Details und zeige Dashboard
-    user_session = sessions[session_id]
-    user_id = user_session["user_id"]
-    
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    # Hole registrierte Webseiten des Kunden
-    websites = db.query(Website).filter(Website.user_id == user_id).all()
-    
-    return templates.TemplateResponse(
-        name="dashboard.html",
-        context={
-            "request": request,
-            "email": user_session["email"],
-            "websites": websites,
-            "user": user
-        }
-    )
-
-@app.get("/login", response_class=HTMLResponse)
-@app.get("/register", response_class=HTMLResponse)
-async def show_auth_pages(request: Request):
-    """Zeigt die einheitliche Login- & Registrierungsseite."""
-    return templates.TemplateResponse(
-        name="auth.html",
-        context={"request": request}
-    )

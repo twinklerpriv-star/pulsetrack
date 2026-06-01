@@ -13,8 +13,14 @@ dependencies = [
     "python-multipart>=0.0.9",
     "sqlalchemy>=2.0.0",
     "argon2-cffi>=23.1.0",
-    "pytest-asyncio>=0.21.0",
     "stripe>=8.0.0",
+    "cachetools>=5.3.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.21.0",
 ]
 
 [tool.ruff]
@@ -24,7 +30,6 @@ line-length = 120
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "C90"]
 ignore = ["E501", "C901", "B008", "B904", "E402", "N806", "F841"]
-
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

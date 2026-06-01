@@ -1,10 +1,12 @@
 # API Router: Caddy CNAME Dynamic SSL Verification
 #
-# Datum: 28.05.2026 | Version: 1.0 | Status: Aktiv gepflegt
+# Datum: 31.05.2026 | Version: 1.1 | Status: Aktiv gepflegt
 
 import logging
+import os
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from cachetools import TTLCache
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.config import normalize_site_url
@@ -14,22 +16,37 @@ from app.models.website import Website
 logger = logging.getLogger("analytics_caddy")
 router = APIRouter(tags=["Caddy SSL Proxy"])
 
-# In-Memory-Speicher für verifizierte Domains, um Caddy-Preflight-Abfragen zu beschleunigen
-# Format: {domain_string: is_allowed_boolean}
-cname_cache = {}
+# Bounded Cache zur Vermeidung von Memory-Leaks und DoS-Angriffen (D-8, D-9)
+# Max 1000 verifizierte Domains für maximal 1 Stunde cachen
+cname_cache = TTLCache(maxsize=1000, ttl=3600)
 
 @router.get("/api/verify-cname-domain")
-async def verify_cname_domain(
+def verify_cname_domain(
+    request: Request,
     domain: str = Query(..., description="Die zu verifizierende Custom Domain"),
     db: Session = Depends(get_db)
 ):
     """
     Validiert in Echtzeit, ob eine Custom Domain (CNAME) für SSL/TLS freigegeben werden darf.
     Wird direkt vom Caddy Server via On-Demand TLS angefragt.
+    Nutzt einen Bounded Cache und sichert sich ueber einen Shared Secret-Header ab (A-1, D-8).
+    Faehrt synchron im Thread-Pool.
     """
-    normalized_domain = normalize_site_url(domain)
+    # D-8: Shared-Secret-Header-Ueberpruefung, falls konfiguriert
+    caddy_secret = os.environ.get("CADDY_SECRET")
+    if caddy_secret:
+        client_secret = request.headers.get("X-Caddy-Secret")
+        if not client_secret or client_secret != caddy_secret:
+            logger.warning("Caddy TLS-Anfrage abgewiesen: Ungueltiger X-Caddy-Secret Header.")
+            raise HTTPException(status_code=401, detail="Unauthorized: Invalid Caddy secret.")
+
+    try:
+        normalized_domain = normalize_site_url(domain)
+    except ValueError as e:
+        logger.warning(f"Caddy TLS-Anfrage abgewiesen: Ungueltiges Domain-Format '{domain}': {e}")
+        raise HTTPException(status_code=400, detail="Invalid domain format.")
     
-    # 1. In-Memory Cache Check
+    # 1. In-Memory Bounded Cache Check
     if normalized_domain in cname_cache:
         if cname_cache[normalized_domain]:
             return {"allowed": True, "domain": domain}
@@ -58,6 +75,9 @@ async def verify_cname_domain(
 
 def invalidate_cname_cache(domain: str) -> None:
     """Löscht eine bestimmte Domain aus dem Caddy Cache (bei Löschung/Tarifsperrung)."""
-    normalized_domain = normalize_site_url(domain)
-    if normalized_domain in cname_cache:
-        del cname_cache[normalized_domain]
+    try:
+        normalized_domain = normalize_site_url(domain)
+        if normalized_domain in cname_cache:
+            del cname_cache[normalized_domain]
+    except Exception:
+        pass

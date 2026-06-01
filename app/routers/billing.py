@@ -1,6 +1,6 @@
 # API Router: Stripe Billing & Webhooks
 #
-# Datum: 28.05.2026 | Version: 1.0 | Status: Aktiv gepflegt
+# Datum: 31.05.2026 | Version: 1.1 | Status: Aktiv gepflegt
 
 import logging
 
@@ -12,10 +12,8 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models.user import User
-from app.models.website import Website
 from app.routers.auth import get_current_user_id
-from app.services import stripe_service
-from app.services.security import invalidate_token_cache
+from app.services import stripe_service, subscription_service
 
 logger = logging.getLogger("analytics_billing")
 router = APIRouter(tags=["Billing & Subscriptions"])
@@ -60,6 +58,8 @@ async def billing_checkout(
             stripe_customer_id=user.stripe_customer_id
         )
         return RedirectResponse(url=session.url, status_code=303)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Fehler bei Erstellung der Stripe Checkout Session: {e}")
         raise HTTPException(status_code=500, detail="Stripe integration error. Please try again.")
@@ -90,6 +90,8 @@ async def billing_portal(
             return_url=return_url
         )
         return RedirectResponse(url=session.url, status_code=303)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Fehler bei Erstellung der Stripe Portal Session: {e}")
         raise HTTPException(status_code=500, detail="Stripe Portal integration error.")
@@ -98,7 +100,8 @@ async def billing_portal(
 @router.get("/api/verify-checkout")
 async def verify_checkout(
     session_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)  # B-1: Authentifizierung hinzugefügt
 ):
     """
     Verifiziert den Checkout synchron bei Redirect von Stripe (Race-Condition-Schutz).
@@ -108,32 +111,30 @@ async def verify_checkout(
         session_details = stripe_service.verify_checkout_session(session_id)
         user_id = session_details["user_id"]
 
-        if not user_id:
-            logger.error("Stripe Checkout-Metadaten enthalten keine user_id.")
-            raise HTTPException(status_code=400, detail="Invalid session metadata.")
+        # B-1: Validierung der user_id gegen den aktuell eingegloggten Benutzer
+        if not user_id or user_id != current_user_id:
+            logger.error(f"Stripe Checkout-Metadaten User ID {user_id} stimmt nicht mit aktuellem User {current_user_id} ueberein.")
+            raise HTTPException(status_code=403, detail="Unberechtigter Zugriff: Sitzung stimmt nicht mit Ihrem Benutzerkonto ueberein.")
 
         user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(status_code=404, detail="User associated with payment not found.")
 
-        # Statusaktualisierung
+        # Statusaktualisierung über den zentralen Subscription-Service (E-4, B-3)
         if session_details["payment_status"] == "paid" or session_details["status"] == "complete":
-            user.stripe_customer_id = session_details["customer"]
-            user.stripe_subscription_id = session_details["subscription"]
-            user.subscription_status = "active"
-            db.commit()
-
-            # Cache-Preflights ungültig machen, um Ingestion sofort freizuschalten
-            websites = db.query(Website).filter(Website.user_id == user.id).all()
-            for website in websites:
-                invalidate_token_cache(website.tracking_token)
-
-            logger.info(f"Abonnement synchron aktiviert für User {user.id} (Stripe Customer {user.stripe_customer_id}).")
+            subscription_service.activate_user_subscription(
+                db, 
+                user, 
+                session_details["customer"], 
+                session_details["subscription"]
+            )
             return RedirectResponse(url="/?payment=success", status_code=303)
         
         logger.warning(f"Checkout-Verifizierung fehlgeschlagen: Status {session_details['status']}, Payment {session_details['payment_status']}")
         return RedirectResponse(url="/?payment=failed", status_code=303)
         
+    except HTTPException:
+        raise  # B-4: Keine echten HTTPExceptions verschlucken
     except Exception as e:
         logger.error(f"Fehler bei der synchronen Checkout-Verifizierung: {e}")
         return RedirectResponse(url="/?payment=error", status_code=303)
@@ -157,7 +158,7 @@ async def stripe_webhook(
 
     try:
         event = stripe.Webhook.construct_event(
-            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET.get_secret_value()
         )
     except ValueError:
         logger.error("Ungültiges Webhook-Payload.")
@@ -175,8 +176,6 @@ async def stripe_webhook(
     if event_type in ("checkout.session.completed", "invoice.paid"):
         customer_id = data_object.get("customer")
         subscription_id = data_object.get("subscription")
-
-        # user_id aus Checkout Metadata holen (falls checkout.session.completed)
         metadata = data_object.get("metadata") or {}
         user_id = metadata.get("user_id")
 
@@ -187,18 +186,8 @@ async def stripe_webhook(
         if not user and customer_id:
             user = db.query(User).filter(User.stripe_customer_id == customer_id).first()
 
-        if user:
-            user.stripe_customer_id = customer_id
-            if subscription_id:
-                user.stripe_subscription_id = subscription_id
-            user.subscription_status = "active"
-            db.commit()
-
-            # Cache für alle Tracking-Tokens des Users leeren
-            websites = db.query(Website).filter(Website.user_id == user.id).all()
-            for website in websites:
-                invalidate_token_cache(website.tracking_token)
-
+        if user and customer_id:
+            subscription_service.activate_user_subscription(db, user, customer_id, subscription_id)
             logger.info(f"Webhook verarbeitet: Abo aktiviert/erneuert für User {user.id}")
         else:
             logger.warning(f"Webhook-Zahlung empfangen, aber kein User gefunden für Customer ID {customer_id}")
@@ -214,14 +203,7 @@ async def stripe_webhook(
         ).first()
 
         if user:
-            user.subscription_status = "canceled"
-            db.commit()
-
-            # Cache sofort invalidieren, damit Ingestion geblockt wird
-            websites = db.query(Website).filter(Website.user_id == user.id).all()
-            for website in websites:
-                invalidate_token_cache(website.tracking_token)
-
+            subscription_service.cancel_user_subscription(db, user)
             logger.info(f"Webhook verarbeitet: Abo gekündigt für User {user.id}")
         else:
             logger.warning(f"Abonnement-Kündigung empfangen, aber kein passender User in DB für Sub {subscription_id}")
