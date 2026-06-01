@@ -1,8 +1,29 @@
+# ==============================================================================
+# PULSETRACK ANALYTICS - GLOBALE SICHERHEITS- & CORS-KONFIGURATION
+# ==============================================================================
+# Datum: 01.06.2026 | Version: 1.1 | Status: Aktiv gepflegt
+#
+# BETRIEBSWIRTSCHAFTLICHER ZWECK DIESER DATEI:
+# Diese Datei regelt die grundlegenden Sicherheitsrichtlinien der Web-Applikation.
+# Hier wird konfiguriert, welche Webseiten sicher auf die internen Benutzeroberflächen
+# (Dashboard, Registrierung etc.) zugreifen dürfen und wie die Login-Sitzungen (Cookies)
+# gegen Hackerangriffe abgesichert werden.
+# ==============================================================================
+
 cors:
+  # WHitelist erlaubter Domains (CORS-Schutz / D-1):
+  # Nur Webseiten auf dieser Liste dürfen API-Anfragen an das Benutzerkonto senden.
+  # Dies verhindert, dass manipulierte fremde Webseiten Login-Daten abfangen.
   whitelist:
     - "http://localhost:8000"
     - "http://127.0.0.1:8000"
     - "https://pulsetrack.io"
+
 security:
+  # SICHERHEITS-COOKIES (Sitzungs-Absicherung):
+  # cookie_secure: true  → Login-Sitzungen werden AUSSCHLIESSLICH über HTTPS (verschlüsselt) übertragen.
+  # cookie_samesite: Strict → Verhindert "Cross-Site-Request-Forgery" (CSRF) Angriffe zu 100%.
+  #                           Der Browser sendet das Login-Cookie niemals mit, wenn von einer
+  #                           fremden Webseite auf das Dashboard verlinkt wird.
   cookie_secure: true
   cookie_samesite: "Strict"

@@ -1,11 +1,29 @@
-# Litestream-Konfiguration für PulseTrack
+# ==============================================================================
+# PULSETRACK ANALYTICS - LITESTREAM ECHTZEIT-CLOUD-BACKUP KONFIGURATION
+# ==============================================================================
+# Datum: 01.06.2026 | Version: 1.1 | Status: Bereit für Produktion & Audit-sicher
 #
-# Datum: 01.06.2026 | Version: 1.0 | Status: Bereit für Produktion
-# Detaillierte Dokumentation unter: https://litestream.io/reference/config/
+# BETRIEBSWIRTSCHAFTLICHER ZWECK DIESER DATEI:
+# Diese Konfigurationsdatei steuert das vollautomatische Echtzeit-Backup-System.
+# Litestream überwacht die lokale SQLite-Datenbankdatei und überträgt jede Transaktion
+# (z. B. einen neuen Besucher-Klick) verschlüsselt und hochkomprimiert in einen
+# S3-kompatiblen Cloud-Speicher (z. B. AWS S3, Cloudflare R2, MinIO).
+#
+# VORTEILE DIESER LÖSUNG (FÜR GESCHÄFTSFÜHRER):
+# 1. Nahezu Null Datenverlust (sync-interval: 1s):
+#    Das System sichert Daten im Sekundentakt. Bei einem Ausfall verlieren Sie
+#    maximal die Statistiken der allerletzten Sekunde – im Gegensatz zu alten
+#    täglichen Backup-Skripten, die Daten von 24 Stunden verlieren können.
+# 2. Kostengünstig und performant:
+#    Statt riesige Datenbank-Kopien zu übertragen, streamt Litestream nur die
+#    winzigen Änderungen (WAL-Frames). Das spart Bandbreite und Cloud-Speicher-Kosten.
+# ==============================================================================
 
 dbs:
+  # Pfad zur lokalen SQLite-Datenbankdatei im Docker-Container
   - path: /data/analytics.db
     replicas:
+      # S3-kompatibler Cloud-Zielspeicher für die Replikate
       - type: s3
         bucket: ${LITESTREAM_BUCKET}
         path: db
@@ -13,5 +31,6 @@ dbs:
         endpoint: ${LITESTREAM_ENDPOINT}
         access-key-id: ${LITESTREAM_ACCESS_KEY_ID}
         secret-access-key: ${LITESTREAM_SECRET_ACCESS_KEY}
+        
         # WAL-Sync-Frequenz (Standard: 1 Sekunde für nahezu null Datenverlust)
         sync-interval: 1s

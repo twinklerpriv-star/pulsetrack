@@ -1,43 +1,68 @@
+# ==============================================================================
+# PULSETRACK CI/CD PIPELINE - AUTOMATISIERTE INTEGRATION & QUALITÄTSPRÜFUNG
+# ==============================================================================
+# Datum: 01.06.2026 | Version: 1.1 | Status: Aktiv gepflegt & Produktionsbereit
+#
+# BETRIEBSWIRTSCHAFTLICHER ZWECK DIESER DATEI:
+# Diese Datei deklariert die "GitHub Actions CI/CD Pipeline". Das ist das digitale
+# Fließband der Software. Jedes Mal, wenn Ihr IT-Techniker neuen Code auf GitHub
+# hochlädt (Push) oder Änderungen zusammenführen möchte (Pull Request), startet GitHub
+# vollautomatisch eine isolierte Testmaschine in der Cloud.
+# Diese Maschine baut die Anwendung, prüft die Codequalität und führt alle Tests aus.
+# Nur wenn ALLES zu 100% fehlerfrei läuft, darf der Code in die Produktion!
+# ==============================================================================
+
 name: PulseTrack CI/CD Pipeline
 
 on:
+  # Löst die Pipeline bei jedem Code-Upload auf den Haupt-Zweigen (main, master, dev) aus
   push:
     branches: [ main, master, dev ]
+  # Löst die Pipeline bei jedem Review-Prozess (Pull Request) aus
   pull_request:
     branches: [ main, master, dev ]
 
 jobs:
   test-and-lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Nutzt ein frisches, sicheres Linux (Ubuntu) in der Cloud
 
     steps:
+      # 1. Quellcode aus GitHub in die Testumgebung herunterladen
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # 2. Das ultraschnelle Paket-Werkzeug "uv" installieren und den Cache aktivieren
+      #    Der Cache spart bei jedem Durchlauf wertvolle Minuten Bauzeit.
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
           version: "latest"
 
+      # 3. Offizielle Python 3.10 Umgebung auf der Testmaschine bereitstellen
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
+      # 4. Alle Anwendungs- und Testabhängigkeiten sicher auf dem Testsystem installieren
       - name: Install dependencies
         run: |
           uv pip install --system .
           uv pip install --system -e ".[test]"
 
+      # 5. Den Ruff-Linter ausführen: Prüft den Code auf potenzielle logische Fehler und unsauberen Stil
       - name: Run Ruff Linter
         run: |
           uv run ruff check .
 
+      # 6. Ruff Formatter prüfen: Stellt sicher, dass das Layout und die Einrückung des Codes perfekt sind
       - name: Run Ruff Formatter Check
         run: |
           uv run ruff format --check .
 
+      # 7. Die komplette automatisierte Test-Suite (20/20 Tests) starten
+      #    Erst wenn dieser Schritt erfolgreich ist, gilt die Änderung als "sicher".
       - name: Run Test Suite
         run: |
           uv run pytest -v

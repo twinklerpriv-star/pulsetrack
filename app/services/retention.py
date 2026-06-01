@@ -1,6 +1,25 @@
-# Aufbewahrungsbereinigung (Retention Service)
+# ==============================================================================
+# PULSETRACK ANALYTICS - AUTOMATISCHE DATEN- retention (RETENTION SERVICE)
+# ==============================================================================
+# Datum: 01.06.2026 | Version: 1.2 | Status: Aktiv gepflegt & DSGVO-konform
 #
-# Datum: 31.05.2026 | Version: 1.1 | Status: Aktiv gepflegt
+# BETRIEBSWIRTSCHAFTLICHER ZWECK DIESER DATEI:
+# Diese Datei sorgt dafür, dass die gespeicherten Analytics-Klicks nicht ins
+# Unendliche wachsen. Sie löscht vollautomatisch veraltete Daten und setzt damit
+# das DSGVO-Prinzip der Datenminimierung konsequent um.
+#
+# REGELN DER DATENAUFBEWAHRUNG (TARIFFILTER):
+# KUNDENVERSTÄNDLICHE ERKLÄRUNG:
+# Je nach gewähltem Tarif werden Daten unterschiedlich lange aufbewahrt:
+# 1. Trial- (Testphase) und gekündigte Konten:
+#    Besucherdaten werden bereits nach 14 Tagen unwiderruflich gelöscht.
+# 2. Bezahlte B2B-Kundenkonten (Aktiv):
+#    Besucherdaten werden nach 365 Tagen (1 Jahr) gelöscht.
+#
+# Zusätzlich wird bei jedem Durchlauf dieser Funktion der gestrige geheime
+# HMAC-Schlüssel gelöscht. Dadurch sind alte Besucher-IP-Hashes rückwirkend
+# nie wieder entschlüsselbar (Forward Secrecy).
+# ==============================================================================
 
 import logging
 from datetime import datetime, timedelta, timezone
@@ -14,9 +33,11 @@ logger = logging.getLogger("analytics_retention")
 
 def prune_database() -> None:
     """
-    Führt die automatische Aufbewahrungsbereinigung (Retention) gemäß der Tarife durch
-    und rotiert taeglich die HMAC-Keys zur Gewaehrleistung der Forward Secrecy (C-2).
-    Schont Speicherplatz und gewährt die DSGVO-Datenminimierung.
+    KUNDENVERSTÄNDLICHE ERKLÄRUNG (Datenbereinigungs-Job):
+    Wird alle 12 Stunden vom System aufgerufen.
+    Er ermittelt, welche Hits das jeweilige Verfallsdatum (14 Tage oder 365 Tage)
+    überschritten haben, und löscht diese physisch aus der SQLite-Datenbank.
+    Anschließend löscht er alle abgelaufenen IP-Schlüssel von gestern.
     """
     # Lokaler Import zur Vermeidung zirkulärer Importe (Circular Import Break)
     from app.database import SessionLocal
@@ -26,7 +47,9 @@ def prune_database() -> None:
         logger.info("Datenbank-Pruning-Prozess wird gestartet...")
         now = datetime.now(tz=timezone.utc).replace(tzinfo=None)
         
+        # ======================================================================
         # 1. Trial- und Starter-Accounts bereinigen (14 Tage Aufbewahrung)
+        # ======================================================================
         fourteen_days_ago = (now - timedelta(days=14)).isoformat()
         
         starter_users = db.query(User.id).filter(
@@ -46,7 +69,9 @@ def prune_database() -> None:
                 ).delete(synchronize_session=False)
                 logger.info(f"{deleted_starter_hits} veraltete Hits von Trial/Canceled-Accounts gelöscht.")
 
+        # ======================================================================
         # 2. Business-Accounts bereinigen (365 Tage Aufbewahrung)
+        # ======================================================================
         one_year_ago = (now - timedelta(days=365)).isoformat()
         
         business_users = db.query(User.id).filter(User.subscription_status == "active").all()
@@ -63,7 +88,10 @@ def prune_database() -> None:
                 ).delete(synchronize_session=False)
                 logger.info(f"{deleted_business_hits} veraltete Hits von Business-Accounts gelöscht (älter als 1 Jahr).")
                 
-        # C-2: Rotationsaufruf für alte HMAC-Keys direkt integrieren zur taeglichen Ausfuehrung
+        # ======================================================================
+        # 3. HMAC-Key-Rotation (Forward Secrecy für Besucherschutz)
+        # ======================================================================
+        # Löscht alle temporären IP-Hashing-Schlüssel, die älter als 24 Stunden sind.
         logger.info("HMAC-Key-Rotationsprozess wird gestartet...")
         rotate_daily_hmac_key(db)
         

@@ -1,6 +1,17 @@
-# API Routers Initialisierung
+# ==============================================================================
+# PULSETRACK ANALYTICS - SYSTEM-API-ROUTER-BÜNDELUNG (ROUTERS-ZENTRALE)
+# ==============================================================================
+# Datum: 01.06.2026 | Version: 1.2 | Status: Aktiv gepflegt
 #
-# Datum: 31.05.2026 | Version: 1.1
+# BETRIEBSWIRTSCHAFTLICHER ZWECK DIESER DATEI:
+# Diese Datei bündelt alle einzelnen Funktions-Router (Nutzerkonten, Login, Stripe,
+# SSL, Datenempfang, Dashboard und Webviews) des PulseTrack-Systems an einem Ort,
+# damit FastAPI diese im Hauptmodul (main.py) in einem einzigen Schritt importieren
+# und bereitstellen kann.
+#
+# INFORMATION FÜR DEN IT-TECHNIKER:
+# - Sammelt und exportiert alle modularen APIRouter für die FastAPI-Instanz.
+# ==============================================================================
 
 from app.routers.account import router as account_router
 from app.routers.auth import router as auth_router

@@ -1,36 +1,57 @@
+# ==============================================================================
+# PULSETRACK ANALYTICS - MODERNES BUILD- & DEPENDENCY-SYSTEM (PEP 621 / TOML)
+# ==============================================================================
+# Datum: 01.06.2026 | Version: 1.1 | Status: Aktiv gepflegt & Standardkonform
+#
+# BETRIEBSWIRTSCHAFTLICHER ZWECK DIESER DATEI:
+# Diese Datei (pyproject.toml) ist die zentrale "Zutatenliste" und Konfigurations-
+# zentrale für Entwickler und das automatisierte Deployment. Sie definiert alle
+# benötigten Bibliotheken (Abhängigkeiten), Python-Versionen sowie die Regeln für
+# Codequalität (Ruff) und automatisierte Software-Tests (Pytest).
+# ==============================================================================
+
 [project]
 name = "pulsetrack"
 version = "0.1.0"
 description = "A modern, lightweight, privacy-friendly Web-Analytics tracker and dashboard."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10"  # Mindestens Python 3.10 erforderlich (Unterstützung für moderne Union-Typen)
+
+# PROJEKT-ABHÄNGIGKEITEN (SOFTWARE-BIBLIOTHEKEN):
+# Hier sind alle externen Komponenten deklariert, die PulseTrack zum Laufen benötigt:
 dependencies = [
-    "fastapi>=0.100.0",
-    "uvicorn>=0.22.0",
-    "jinja2>=3.1.2",
-    "pydantic>=2.0.0",
-    "pydantic-settings>=2.0.0",
-    "python-multipart>=0.0.9",
-    "sqlalchemy>=2.0.0",
-    "argon2-cffi>=23.1.0",
-    "stripe>=8.0.0",
-    "cachetools>=5.3.0",
+    "fastapi>=0.100.0",          # Das ultraschnelle Web-Framework für unsere APIs
+    "uvicorn>=0.22.0",          # Der hochperformante ASGI-Webserver
+    "jinja2>=3.1.2",            # Die Template-Engine für das Server-Side-Rendering
+    "pydantic>=2.0.0",          # Datenvalidierung und Einstellungen
+    "pydantic-settings>=2.0.0", # Sicheres Einlesen von Umgebungsvariablen
+    "python-multipart>=0.0.9",  # Ermöglicht das Verarbeiten von Formulardaten (Login/Registrierung)
+    "sqlalchemy>=2.0.0",        # Die professionelle ORM-Datenbankschnittstelle (SQL)
+    "argon2-cffi>=23.1.0",      # GPU-resistente Passwortsicherung nach OWASP-Empfehlung
+    "stripe>=8.0.0",            # Schnittstelle zum Zahlungsabwickler Stripe (Abo-Verwaltung)
+    "cachetools>=5.3.0",        # Bounded In-Memory-Caching zur Vermeidung von Datenbanklast (D-9)
 ]
 
 [project.optional-dependencies]
+# ZUSÄTZLICHE BIBLIOTHEKEN FÜR ENTWICKLUNGS- UND TESTZWECKE (QA):
 test = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.21.0",
+    "pytest>=8.0.0",            # Das Standard-Testframework zur automatischen Qualitätssicherung
+    "pytest-asyncio>=0.21.0",    # Ermöglicht das Testen von asynchronen Hintergrundprozessen
 ]
 
 [tool.ruff]
+# RUFF-KONFIGURATION (BLITZSCHNELLER LINTER & FORMATIERER):
+# Sorgt dafür, dass der Programmcode absolut sauber formatiert ist und keine ungenutzten
+# Importe oder potenzielle Fehlerquellen enthält. Garantiert exzellente Code-Qualität.
 target-version = "py310"
-line-length = 120
+line-length = 120  # Maximale Zeilenlänge von 120 Zeichen für optimale Lesbarkeit auf Widescreen-Monitoren
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "C90"]
 ignore = ["E501", "C901", "B008", "B904", "E402", "N806", "F841"]
 
 [tool.pytest.ini_options]
+# PYTEST TEST-KONFIGURATION:
+# Sagt der Test-Engine, wo sie nach automatisierten Tests suchen soll.
 testpaths = ["tests"]
 python_files = ["test_*.py"]

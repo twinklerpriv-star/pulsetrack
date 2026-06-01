@@ -1,6 +1,27 @@
-# API Router: UI Templates & Dashboard Views
+# ==============================================================================
+# API-ROUTER: UI-TEMPLATES & DASHBOARD-ANSICHTEN (SERVER-SIDE RENDERING)
+# ==============================================================================
+# Datum: 01.06.2026 | Version: 1.1 | Status: Aktiv gepflegt
 #
-# Datum: 31.05.2026 | Version: 1.0 | Status: Aktiv gepflegt
+# BETRIEBSWIRTSCHAFTLICHER ZWECK DIESER DATEI:
+# Dieser Router ist für die visuelle Darstellung von PulseTrack zuständig.
+# Er steuert, was der Besucher sieht:
+# - Die verkaufsstarke Landingpage (für anonyme Besucher).
+# - Das interaktive Dashboard (für eingeloggte B2B-Kunden).
+# - Die Login- und Registrierungsmasken.
+#
+# AUSWIRKUNG FÜR DEN KUNDEN / GESCHÄFTSFÜHRER:
+# - Blitzschnelle Ladezeiten: Da die Seiten direkt auf dem Server zusammengebaut
+#   werden (Server-Side Rendering), fliegen die Seiten in Millisekunden auf den
+#   Bildschirm des Kunden. Das steigert die Conversion-Rate und spart Ladezeit.
+# - Keine dicken Client-Frameworks nötig: Funktioniert auf jedem Smartphone
+#   und Tablet extrem flüssig und ressourcenschonend.
+#
+# INFORMATION FÜR DEN IT-TECHNIKER:
+# - Verwendet Jinja2-Templates für schnelles HTML-Rendering in Python.
+# - Nutzt synchrone Pfade (def statt async def), da blockierende DB-Abfragen
+#   beim Laden des Dashboards (Abruf der registrierten Webseiten) stattfinden.
+# ==============================================================================
 
 import logging
 import os
@@ -18,20 +39,22 @@ from app.routers.auth import SESSION_COOKIE_NAME, sessions
 logger = logging.getLogger("analytics_views")
 router = APIRouter(tags=["UI Views"])
 
-# Templates-Verzeichnis konfigurieren
+# HTML-Templates-Verzeichnis konfigurieren (Jinja2)
 templates_dir = os.path.join(os.path.dirname(__file__), "..", "templates")
 templates = Jinja2Templates(directory=templates_dir)
 
 @router.get("/", response_class=HTMLResponse)
 def home_or_dashboard(request: Request, db: Session = Depends(get_db)):
     """
-    Liefert das interaktive Dashboard (wenn eingeloggt) oder
-    die verkaufsstarke Premium-Landingpage (wenn nicht eingeloggt) (A-1, E-2).
-    Faehrt synchron im Thread-Pool, da DB-Abfragen durchgefuehrt werden.
+    KUNDENVERSTÄNDLICHE ERKLÄRUNG (Startseite oder Dashboard):
+    Dieser Endpoint wird aufgerufen, wenn jemand die Hauptadresse (/) aufruft.
+    Das System entscheidet:
+    - Ist der Besucher nicht eingeloggt? -> Zeige die Premium-Landingpage mit dem ROI-Rechner.
+    - Ist der Besucher eingeloggt? -> Lade seine registrierten Webseiten und zeige sein persönliches Dashboard.
     """
     session_id = request.cookies.get(SESSION_COOKIE_NAME)
     
-    # Falls nicht eingeloggt -> Zeige Premium-Landingpage mit ROI-Rechner
+    # Falls nicht eingeloggt -> Zeige verkaufsstarke Landingpage mit ROI-Rechner
     if not session_id or session_id not in sessions:
         return templates.TemplateResponse(
             name="landingpage.html",
@@ -44,7 +67,7 @@ def home_or_dashboard(request: Request, db: Session = Depends(get_db)):
     
     user = db.query(User).filter(User.id == user_id).first()
     
-    # Hole registrierte Webseiten des Kunden
+    # Registrierte Webseiten des Kunden aus der DB abrufen
     websites = db.query(Website).filter(Website.user_id == user_id).all()
     
     return templates.TemplateResponse(
@@ -60,7 +83,11 @@ def home_or_dashboard(request: Request, db: Session = Depends(get_db)):
 @router.get("/login", response_class=HTMLResponse)
 @router.get("/register", response_class=HTMLResponse)
 def show_auth_pages(request: Request):
-    """Zeigt die einheitliche Login- & Registrierungsseite (E-2)."""
+    """
+    KUNDENVERSTÄNDLICHE ERKLÄRUNG:
+    Zeigt die einheitliche und moderne Login- bzw. Registrierungsseite an,
+    wo sich B2B-Kunden einloggen oder neu registrieren können.
+    """
     return templates.TemplateResponse(
         name="auth.html",
         context={"request": request}

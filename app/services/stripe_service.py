@@ -1,6 +1,26 @@
-# Stripe Service: Checkout, Portal und Verifizierung
+# ==============================================================================
+# PULSETRACK ANALYTICS - STRIPE INTEGRATIONS-SERVICE
+# ==============================================================================
+# Datum: 01.06.2026 | Version: 1.2 | Status: Aktiv gepflegt & DSGVO-konform
 #
-# Datum: 31.05.2026 | Version: 1.1 | Status: Aktiv gepflegt
+# BETRIEBSWIRTSCHAFTLICHER ZWECK DIESER DATEI:
+# Dieser Service steuert die gesamte Zahlungsabwicklung (Abonnements, Rechnungen,
+# Zahlungsarten) über den weltweiten Marktführer Stripe.
+# Er stellt sicher, dass PulseTrack als vollautomatisiertes SaaS (Software as a Service)
+# Produkt betrieben werden kann, bei dem Kunden Abos abschließen und selbstständig verwalten.
+#
+# WICHTIGE FUNKTIONEN FÜR DEN KUNDEN / GESCHÄFTSFÜHRER:
+# 1. Schutz vor Doppelbuchungen (Idempotency Keys):
+#    Wenn ein Kunde ungeduldig ist und doppelt auf "Kaufen" klickt, sorgt ein
+#    Sicherheits-Schlüssel (Idempotency Key) dafür, dass Stripe das Geld nur EINMAL abbucht.
+# 2. Automatische Steuerberechnung & B2B Reverse-Charge (USt-IdNr.):
+#    Da PulseTrack ein europäisches B2B-Produkt ist, fragt Stripe beim Checkout
+#    automatisch die Umsatzsteuer-Identifikationsnummer (USt-IdNr.) des Firmenkunden ab.
+#    Gültige EU-Firmen außerhalb des Anbieterlandes zahlen automatisch Netto (Reverse-Charge).
+# 3. Self-Service Kundenportal (Customer Portal):
+#    Kunden können ihre Rechnungen herunterladen, Kreditkarten aktualisieren oder das Abo
+#    selbst kündigen. Das spart Ihnen enorme Support-Arbeit!
+# ==============================================================================
 
 import logging
 import time
@@ -11,6 +31,7 @@ from stripe import AuthenticationError, CardError, InvalidRequestError, RateLimi
 
 from app.config import settings
 
+# Logger initialisieren, um Zahlungsströme und Fehler im System zu protokollieren
 logger = logging.getLogger("analytics_stripe")
 
 # Stripe API-Schlüssel einmalig initialisieren (B-5)
@@ -25,8 +46,12 @@ def create_checkout_session(
     stripe_customer_id: str | None = None
 ) -> stripe.checkout.Session:
     """
-    Erzeugt eine Stripe Checkout-Session mit B2B USt-IdNr.-Abfrage und steuerlicher Registrierung.
-    Nutzt Idempotency Keys gegen Doppel-Abbuchungen (B-2).
+    KUNDENVERSTÄNDLICHE ERKLÄRUNG (Abonnement-Kaufseite):
+    Erstellt einen sicheren, verschlüsselten Bezahllink (Stripe Checkout).
+    Hier gibt der Kunde seine Zahlungsdaten ein. Der Prozess unterstützt:
+    - B2B-Kunden: Erfassung und Prüfung der Umsatzsteuer-Identifikationsnummer (USt-IdNr.).
+    - Reverse-Charge-Verfahren: Automatische Null-Prozent-Versteuerung für verifizierte EU-Unternehmen.
+    - Idempotenz-Schutz: Verhindert doppelte Zahlungsbuchungen durch doppeltes Klicken innerhalb von 60s.
     """
     params = {
         "payment_method_types": ["card"],
@@ -46,7 +71,7 @@ def create_checkout_session(
             "enabled": True,  # Sammelt automatisch USt-IdNr. für EU Reverse-Charge
         },
         "automatic_tax": {
-            "enabled": True,  # Automatische Steuerberechnung
+            "enabled": True,  # Automatische Steuerberechnung je nach Herkunftsland
         }
     }
     
@@ -55,7 +80,8 @@ def create_checkout_session(
     else:
         params["customer_email"] = email
         
-    # Idempotency Key generieren basierend auf User-ID, Plan-Price-ID und 60s Zeitfenster (B-2)
+    # Idempotency Key generieren basierend auf User-ID, Plan-Price-ID und einem 60s Zeitfenster (B-2)
+    # Das garantiert, dass exakt dieselbe Anfrage innerhalb einer Minute nur einmal verarbeitet wird.
     idempotency_key = f"checkout_{user_id}_{price_id}_{int(time.time() // 60)}"
     
     try:
@@ -78,7 +104,13 @@ def create_checkout_session(
 
 def create_customer_portal(stripe_customer_id: str, return_url: str) -> stripe.billing_portal.Session:
     """
-    Generiert das Stripe Customer Portal für Kreditkarten-Updates, Rechnungs-Downloads und Kündigungen.
+    KUNDENVERSTÄNDLICHE ERKLÄRUNG (Self-Service Rechnungsportal):
+    Erzeugt einen Link zum geschützten Stripe-Kundenportal.
+    Dort kann der eingeloggte Geschäftsführer:
+    - Bisherige Rechnungen als PDF herunterladen (für die Buchhaltung).
+    - Die Kreditkarte oder Bankverbindung ändern.
+    - Das Abonnement eigenständig kündigen oder upgraden.
+    Es ist keine manuelle Interaktion Ihres Support-Teams notwendig!
     """
     try:
         return stripe.billing_portal.Session.create(
@@ -91,7 +123,11 @@ def create_customer_portal(stripe_customer_id: str, return_url: str) -> stripe.b
 
 def verify_checkout_session(session_id: str) -> dict:
     """
-    Fragt Stripe synchron ab, um Status und Customer ID sofort zu verifizieren (Race-Condition-Schutz).
+    KUNDENVERSTÄNDLICHE ERKLÄRUNG (Zahlungsverifizierung):
+    Sobald der Kunde von Stripe zurück auf unsere Website geleitet wird, fragt diese Funktion
+    sofort und direkt bei Stripe nach: "Hat dieser Kunde wirklich bezahlt?".
+    Dies verhindert Betrug (z.B. das manuelle Aufrufen der Erfolgs-URL) und schaltet das
+    Konto erst nach verifizierter Zahlung frei.
     """
     try:
         session = stripe.checkout.Session.retrieve(session_id)

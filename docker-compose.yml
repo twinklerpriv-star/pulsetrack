@@ -1,28 +1,45 @@
-# Docker Compose: PulseTrack
-# Datum: 20.05.2026 | Version: 1.0 | Status: Produktionsbereit
+# ==============================================================================
+# PULSETRACK ANALYTICS - CONTAINER-ORCHESTRIERUNG (DOCKER COMPOSE)
+# ==============================================================================
+# Datum: 01.06.2026 | Version: 1.2 | Status: Produktionsbereit
 #
-# Verwendung:
-#   docker compose up -d            → Container starten
-#   docker compose down             → Container stoppen
-#   docker compose logs -f          → Logs verfolgen
+# BETRIEBSWIRTSCHAFTLICHER ZWECK DIESER DATEI:
+# Diese Datei ermöglicht es Ihrem IT-Techniker, das gesamte PulseTrack-System
+# mit einem einzigen Befehl zu starten oder zu stoppen. Sie orchestriert zwei
+# getrennte Services: die Haupt-Engine und das Echtzeit-Backup-System (Litestream).
+#
+# BEDIENUNG DURCH DEN IT-TECHNIKER:
+#   docker compose up -d            → Gesamtes System lautlos im Hintergrund starten
+#   docker compose down             → Gesamtes System stoppen (Daten bleiben erhalten)
+#   docker compose logs -f          → Echtzeit-Protokolle einsehen
+# ==============================================================================
 
 services:
+  # 1. DER ANALYTICS CORE-DIENST
+  # Das Herzstück von PulseTrack, das die Dashboard-Oberfläche bereitstellt und
+  # die Ingestion-Hits der Webseitenbesucher empfängt.
   analytics:
     build: .
     container_name: pulsetrack
-    restart: unless-stopped
+    restart: unless-stopped  # Startet den Server bei einem Absturz automatisch neu
 
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Leitet Port 8000 vom Server in den Container weiter
 
     volumes:
-      # Persistente Datenbank: bleibt auch nach Container-Neustart erhalten
+      # PERSISTENTES VOLUMEN (DATEN-TRESOR):
+      # Dies stellt sicher, dass Ihre SQLite-Datenbankdatei sicher auf der Festplatte
+      # des echten Servers liegt und bei Updates oder Neustarts niemals verloren geht.
       - analytics_data:/data
 
     environment:
-      # WICHTIG: In Produktion durch ein sicheres, zufälliges Secret ersetzen!
+      # KRYPTOGRAFISCHE GEHEIMNISSE (Über die Systemumgebung eingespeist):
+      # ANALYTICS_SALT_SECRET: Der geheime Schlüssel zur IP-Anonymisierung
       - ANALYTICS_SALT_SECRET=${ANALYTICS_SALT_SECRET:-change-me-in-production}
       - ANALYTICS_DB_PATH=/data/analytics.db
+      
+      # STRIPE LIZENZ- & ZAHLUNGSDATEN:
+      # Ermöglicht dem System die automatische Abo-Verifizierung
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
       - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
@@ -37,7 +54,13 @@ services:
       retries: 3
       start_period: 10s
 
-  # Litestream Sidecar-Container für S3-Replikation (Ausfallsicherheit & Disaster Recovery)
+  # 2. DAS LITESTREAM ECHTZEIT-BACKUP (SIDECAR)
+  # Ein genialer Schutz für Ihre SQLite-Datenbank: Litestream liest die Datenbank
+  # fortlaufend mit und streamt jede kleine Änderung (Transaktion) im selben Moment
+  # verschlüsselt in Ihren S3-Cloud-Speicher (z.B. AWS S3 oder Cloudflare R2).
+  # VORTEIL FÜR DEN GESCHÄFTSFÜHRER:
+  # Selbst wenn Ihr Server vollständig zerstört wird (z. B. durch einen Brand im Rechenzentrum),
+  # sind Ihre Besucherstatistiken bis zur allerletzten Sekunde sicher in der Cloud gesichert!
   litestream:
     image: litestream/litestream:latest
     container_name: pulsetrack_backup
@@ -56,5 +79,6 @@ services:
     command: replicate -config /etc/litestream.yml
 
 volumes:
+  # Physisches Speicher-Verzeichnis definieren
   analytics_data:
     driver: local

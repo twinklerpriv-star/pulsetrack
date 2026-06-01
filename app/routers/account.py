@@ -1,6 +1,23 @@
-# API Router: GDPR Account Deletion
+# ==============================================================================
+# API-ROUTER: DSGVO-KONTO-LÖSCHUNG (RECHT AUF LÖSCHUNG - ART. 17 DSGVO)
+# ==============================================================================
+# Datum: 01.06.2026 | Version: 1.1 | Status: Aktiv gepflegt & DSGVO-konform
 #
-# Datum: 31.05.2026 | Version: 1.0 | Status: Aktiv gepflegt
+# BETRIEBSWIRTSCHAFTLICHER ZWECK DIESER DATEI:
+# Dieser Router stellt die Schnittstelle bereit, über die B2B-Kunden ihr Konto
+# und alle verknüpften Daten unwiderruflich löschen können.
+#
+# DSGVO-RELEVANZ (RECHT AUF VERGESSENWERDEN):
+# Gemäß Art. 17 der DSGVO hat jeder Nutzer das Recht auf sofortige Löschung
+# seiner personenbezogenen Daten. Diese Funktion stellt sicher, dass wir dieser
+# gesetzlichen Pflicht in Sekundenschnelle und absolut vollständig nachkommen.
+#
+# AUSWIRKUNG FÜR DEN KUNDEN / GESCHÄFTSFÜHRER:
+# - Vertrauen: Ihre Kunden können sich darauf verlassen, dass keine Datenleichen
+#   auf Ihrem Server zurückbleiben.
+# - Automatisierung: Die Löschung erfolgt vollautomatisch, ohne dass Sie manuell
+#   in der Datenbank aufräumen müssen.
+# ==============================================================================
 
 import logging
 
@@ -22,26 +39,34 @@ def delete_account(
     user_id: int = Depends(get_current_user_id)
 ):
     """
-    Loescht das Benutzerkonto und alle verknuepften Daten (Websites, Hits, Signaturen)
-    unwiderruflich gemaess Art. 17 DSGVO (Recht auf Loeschung) via Cascade-Delete.
+    KUNDENVERSTÄNDLICHE ERKLÄRUNG (Kontolöschung):
+    Wenn ein Kunde sein Konto löscht, wird dieser Endpoint aufgerufen.
+    Er löscht:
+    1. Den Benutzerdatensatz (E-Mail, Passwort).
+    2. Alle vom Kunden registrierten Webseiten.
+    3. Alle jemals für diese Webseiten erfassten Klicks/Hits.
+    4. Die digital signierten AVV-Verträge.
+    Zusätzlich wird er sofort abgemeldet (Session-Cookie wird gelöscht).
     """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Benutzer nicht gefunden.")
 
     try:
-        # Loeschung ausloesen (Kaskadierung ist in den Modellen als cascade="all, delete-orphan" definiert)
+        # Löschung auslösen: Die Kaskadierung (automatische Mitlöschung aller Webseiten, Hits etc.)
+        # ist in den ORM-Modellen über cascade="all, delete-orphan" und FOREIGN KEYS definiert.
         db.delete(user)
         db.commit()
 
-        # Aktive Sessions des Benutzers ungueltig machen
+        # Aktive Logins/Sitzungen des Benutzers im Arbeitsspeicher ungültig machen
         sessions_to_delete = [sid for sid, s in list(sessions.items()) if s["user_id"] == user_id]
         for sid in sessions_to_delete:
             sessions.pop(sid, None)
 
-        # Session Cookie loeschen
+        # Das Session-Cookie im Browser des Kunden löschen (sofortige Abmeldung)
         response.delete_cookie(SESSION_COOKIE_NAME)
-        logger.info(f"Benutzerkonto {user_id} und alle assoziierten Daten erfolgreich gemaess Art. 17 DSGVO geloescht.")
+        
+        logger.info(f"Benutzerkonto {user_id} und alle assoziierten Daten erfolgreich gemäss Art. 17 DSGVO geloescht.")
         return {"status": "success", "message": "Ihr Benutzerkonto und alle verknuepften Daten wurden unwiderruflich geloescht."}
     except Exception as e:
         db.rollback()

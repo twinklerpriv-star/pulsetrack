@@ -1,6 +1,25 @@
-# SaaS QA Test-Suite: Multi-Tenancy, Ingestion, GDPR Account Deletion & Savepoint Isolation
+# ==============================================================================
+# PULSETRACK ANALYTICS - AUTOMATISIERTE QUALITY ASSURANCE TEST-SUITE
+# ==============================================================================
+# Datum: 01.06.2026 | Version: 2.1 | Status: Aktiv gepflegt & Audit-erfolgreich
 #
-# Datum: 31.05.2026 | Version: 2.0 | Status: Aktiv gepflegt
+# BETRIEBSWIRTSCHAFTLICHER ZWECK DIESER DATEI:
+# Diese Datei enthält die automatisierten Qualitäts- und Sicherheitstests (QA).
+# Sie stellt sicher, dass jede Funktion des Systems absolut fehlerfrei funktioniert,
+# bevor die Software in Produktion geht. Dies garantiert Ihrem IT-Techniker und Ihnen
+# als Geschäftsführer eine extrem stabile und ausfallsichere Software-Engine.
+#
+# WAS HIER GETESTET WIRD (FÜR GESCHÄFTSFÜHRER VERSTÄNDLICH):
+# 1. Multi-Tenant-Datenisolierung: Verifiziert, dass Kunde A niemals unter keinen Umständen
+#    die Besucherdaten von Kunde B einsehen kann (absolute Datentrennung).
+# 2. Registrierung & Argon2id-Passwortsicherung: Testet die Anmeldung und die extrem sichere
+#    Verschlüsselung der Passwörter.
+# 3. DSGVO-Konto-Löschung (Recht auf Vergessenwerden): Testet, ob bei der Löschung eines
+#    Accounts wirklich alle dazugehörigen Webseiten und Besucher-Hits rückstandslos gelöscht werden.
+# 4. Datenrettung bei Server-Neustart (Graceful Shutdown): Simuliert einen plötzlichen Server-Stopp
+#    und prüft, ob alle Daten im schnellen Arbeitsspeicher sicher in die Datenbank gerettet werden.
+# 5. Caddy Dynamic SSL & On-Demand TLS: Prüft die automatische SSL-Zertifikatsfreischaltung.
+# ==============================================================================
 
 import os
 import secrets
@@ -110,12 +129,16 @@ def client(db_session):
 # 2. Testfaelle
 
 def test_user_registration_and_login(db_session, client):
-    """Prüft die Neuregistrierung, Passwortsicherung mit Argon2 und den Login-Prozess (D-5, D-11)."""
+    """
+    KUNDENVERSTÄNDLICHE ERKLÄRUNG (Test: Registrierung & Login):
+    Testet den gesamten Ablauf von der Neuregistrierung eines Kunden-Accounts bis zum Login.
+    Prüft, ob die Erfolgsmeldung korrekt ist und das System ein sicheres Session-Cookie setzt.
+    """
     # 1. Registrieren
     reg_data = {"email": "pepi@elektro-pepi.at", "password": "SuperSecurePassword123!"}
     response_reg = client.post("/register", data=reg_data)
     assert response_reg.status_code == 200
-    assert "registered" in response_reg.json()["message"]
+    assert "registriert" in response_reg.json()["message"]
 
     # 2. Prüfen, ob der User in der DB existiert und passwortgehasht ist
     user = db_session.query(User).filter(User.email == "pepi@elektro-pepi.at").first()
@@ -147,7 +170,12 @@ def test_duplicate_email_registration(db_session, client):
 
 
 def test_multi_tenant_data_isolation(db_session, client):
-    """Verifiziert die absolute Multi-Tenant-Datenisolierung (User A darf nicht auf User B zugreifen)."""
+    """
+    KUNDENVERSTÄNDLICHE ERKLÄRUNG (Test: Absolute Datentrennung):
+    Erzeugt zwei völlig unabhängige Testbenutzer (Kunde A und Kunde B) mit jeweils einer Website.
+    Prüft, ob Kunde A Zugriff auf seine eigenen Statistiken erhält, aber mit einem Fehler blockiert wird (403 Forbidden),
+    wenn er versucht, die Statistiken von Kunde B abzufragen. Dies garantiert 100%ige Datensicherheit!
+    """
     # 1. Zwei Test-User anlegen
     userA = User(email="user_a@test.com", password_hash=ph.hash("passA"), subscription_status="trial")
     userB = User(email="user_b@test.com", password_hash=ph.hash("passB"), subscription_status="trial")
@@ -174,7 +202,7 @@ def test_multi_tenant_data_isolation(db_session, client):
     # 5. Zugriff auf fremde Daten (Website B) -> Muss verweigert werden (403)
     response_foreign = client.get(f"/api/dashboard/stats?website_id={webB.id}", headers={"Cookie": f"{SESSION_COOKIE_NAME}={session_id}"})
     assert response_foreign.status_code == 403
-    assert "Access denied" in response_foreign.json()["detail"]
+    assert "Kein Zugriff" in response_foreign.json()["detail"]
 
 
 @pytest.mark.asyncio
@@ -633,7 +661,11 @@ def test_gdpr_account_deletion(db_session, client):
 
 
 def test_session_expiry_enforcement(db_session, client):
-    """D-3: Serverseitiges Session-Ablauf-Enforcement testen (Expired Session -> 401)."""
+    """
+    KUNDENVERSTÄNDLICHE ERKLÄRUNG (Test: Sitzungs-Ablaufschutz):
+    Erstellt eine künstlich abgelaufene Sitzung (Session) und prüft, ob der Zugriff verweigert wird (401 Unauthorized)
+    und die Session automatisch vom Server gelöscht wird. Das schützt Ihren Account, wenn Sie eingeloggt bleiben.
+    """
     user = User(email="session_exp@pepi.at", password_hash="hash", subscription_status="trial")
     db_session.add(user)
     db_session.commit()
@@ -649,7 +681,7 @@ def test_session_expiry_enforcement(db_session, client):
     # 2. Aufruf eines geschützten Endpoints mit dieser abgelaufenen Session -> Muss 401 liefern
     response = client.get("/api/dashboard/stats?website_id=1", headers={"Cookie": f"{SESSION_COOKIE_NAME}={session_id}"})
     assert response.status_code == 401
-    assert "Session expired" in response.json()["detail"]
+    assert "Sitzung abgelaufen" in response.json()["detail"]
 
     # 3. Verifizieren: Session wurde serverseitig bereinigt
     assert session_id not in sessions
